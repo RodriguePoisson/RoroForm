@@ -52,6 +52,10 @@ class RoroFormServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'roroform');
 
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/roroform'),
+        ], 'views');
+
         Blade::component('roro-form', Form::class);
         Blade::component('roro-helper', Helper::class);
         Blade::component('roro-select-helper', SelectHelper::class);
