@@ -1,0 +1,32 @@
+@php
+    if(!$wrapperClass){
+            $wrapperClass = 'flex items-center gap-2';
+        }
+@endphp
+<div id="roro-wrapper-{{$id}}" style="@if($hidden) display:none; @endif" class="roro-wrapper roro-wrapper-checkbox{{ $wrapperClass }} @if($hasTopMargins) mt-6 @endif">
+    <input
+        type="checkbox"
+        name="{{ $name }}"
+        id="{{ $id }}"
+        value="{{ $value }}"
+        @if($disabled)
+                disabled
+            @endif
+            @if($readonly)
+                readonly
+            @endif
+{{ ($required && !$disableJsValidation)? 'required' : '' }}
+        class="roro-input roro-input-checkbox h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 transition-colors duration-200 {{$class}}"
+        @if($checked) checked @endif
+    >
+
+    @if($label)
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-checkbox {{ $labelClass }}">
+            {{ $label }} @if($required)<x-roro-required-label></x-roro-required-label>@endif
+        </label>
+    @endif
+</div>
+
+@if($enableError)
+    <x-roro-error :error="$error"></x-roro-error>
+@endif
