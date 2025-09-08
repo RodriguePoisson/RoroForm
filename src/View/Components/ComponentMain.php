@@ -23,7 +23,7 @@ abstract class ComponentMain extends Component
 
     public function getJsPath():string
     {
-        return '/var/www/packages/RoroForm/resources/js/dist/';
+        return __DIR__ . '/../../../resources/js/dist/';
     }
 
 }
