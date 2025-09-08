@@ -1,6 +1,6 @@
 {
     "name": "roro/roroform",
-    "description": "Mon super package Laravel",
+    "description": "Form helper for laravel.",
     "type": "library",
     "autoload": {
         "psr-4": {
