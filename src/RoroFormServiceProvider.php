@@ -48,13 +48,13 @@ class RoroFormServiceProvider extends ServiceProvider
         // Chargement config
         $this->publishes([
             __DIR__.'/../config/roroform.php' => config_path('roroform.php'),
-        ], 'config');
+        ], 'roro-config');
 
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'roroform');
 
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/roroform'),
-        ], 'views');
+        ], 'roro-views');
 
         Blade::component('roro-form', Form::class);
         Blade::component('roro-helper', Helper::class);
