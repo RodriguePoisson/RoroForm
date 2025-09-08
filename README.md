@@ -12,6 +12,11 @@ Install via Composer:
 ```bash
 composer require roro/roroform
 ```
+
+```bash
+php artisan vendor:publish --tag=roro-config
+```
+
 ---
 
 ## Basic Usage
@@ -93,5 +98,16 @@ $(document).ready(function () {
 ```
 
 ---
+
+## Publishing Assets
+
+After installing **Roro Form**, you may want to customize its views or configuration.
+
+### Publish Views
+
+To publish the Blade views for customization:
+
+```bash
+php artisan vendor:publish --tag=roro-views
 
 
