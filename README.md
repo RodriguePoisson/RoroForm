@@ -3,6 +3,8 @@
 Roro Form is a **Laravel package** for building forms using Blade components.  
 It supports multiple input types, AJAX submission, dynamic selects, validation, and more.
 
+For the moment it's only available with tailwind and JQuery.
+
 ---
 
 ## Installation
