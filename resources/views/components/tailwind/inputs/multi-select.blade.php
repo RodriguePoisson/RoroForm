@@ -6,7 +6,6 @@
      data-disable="{{$disabled}}"
      data-readonly="{{$readonly}}"
      style="@if($hidden) display:none; @endif"
-     data-options='@json($options)'
      data-show="{{$optionsOpen}}"
      class="roro-wrapper roro-wrapper-multi-select w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
 
@@ -44,6 +43,14 @@
             </div>
 
             <div data-id="{{$id}}" class="roro-select-dropdown absolute z-10 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+                @include("roroform::components.{$theme}.select-options", ['options' => $options])
+            </div>
+
+            {{-- Templates (caches) clones par le JS pour les ajouts dynamiques (option/categorie/tag). --}}
+            <div class="roro-select-templates" hidden aria-hidden="true">
+                <x-roro-select-option/>
+                <x-roro-select-category/>
+                <x-roro-multi-select-text-tag/>
             </div>
         </div>
     </x-roro-border-error>

@@ -42,9 +42,6 @@ class RoroFormServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        // Chargement routes
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-
         // Chargement config
         $this->publishes([
             __DIR__.'/../config/roroform.php' => config_path('roroform.php'),

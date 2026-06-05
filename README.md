@@ -117,6 +117,32 @@ component's own `roro-*` classes.
 
 ---
 
+## Dynamic select options
+
+Select options are rendered **server-side** — pass them and they're already in the dropdown,
+no JavaScript or network round-trip needed:
+
+```blade
+<x-roro-select name="country" :options="['fr' => 'France', 'es' => 'Spain']"/>
+<x-roro-select name="city" :options="['Europe' => ['par' => 'Paris', 'mad' => 'Madrid']]"/>
+```
+
+To add options **after** load:
+
+```js
+// One option, instantly (client-side, no request). Optional 4th arg = category:
+roroAddOption('country', 'Germany', 'de', 'Europe');
+
+// Or fetch a batch from YOUR own JSON endpoint:
+//   GET /api/countries  ->  [{ "label": "Germany", "value": "de", "category": "Europe" }, ...]
+//   ("category" is optional)
+roroAddOptionsAjax('country', '/api/countries', { q: 'ge' });
+```
+
+`roroAddOptionsAjax` returns a promise resolved with the options it received.
+
+---
+
 ## Publishing Assets
 
 After installing **Roro Form**, you may want to customize its views or configuration.

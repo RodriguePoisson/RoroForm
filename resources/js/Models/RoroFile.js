@@ -4,7 +4,7 @@ class RoroFile extends RoroElement {
     filenameLabelContainer;
     wrapper;
     constructor(id = null) {
-        super('file', id, '', {}, false);
+        super('file', id);
         let self = this;
         self.ready.then(function(){
            self.init();

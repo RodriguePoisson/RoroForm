@@ -1,6 +1,6 @@
 class Input extends RoroElement {
-    constructor(eltType, id = null, prefixId = '', elementArguments = {}, useCache = false) {
-        super(eltType, id, prefixId, elementArguments, useCache);
+    constructor(eltType, id = null, prefixId = '') {
+        super(eltType, id, prefixId);
     }
 }
 
