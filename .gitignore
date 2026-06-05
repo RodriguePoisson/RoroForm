@@ -1,0 +1,10 @@
+# Dépendances Composer (réinstallables — jamais commitées dans un package)
+/vendor/
+composer.lock
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
