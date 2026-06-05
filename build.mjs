@@ -32,6 +32,8 @@ const entries = [
     { in: `${SRC}/select.js`, out: `${DIST}/select.min.js` },
     { in: `${SRC}/Models/RoroFile.js`, out: `${DIST}/RoroFile.min.js` },
     { in: `${SRC}/file.js`, out: `${DIST}/file.min.js` },
+    { in: `${SRC}/Models/RoroRepeatable.js`, out: `${DIST}/RoroRepeatable.min.js` },
+    { in: `${SRC}/repeatable.js`, out: `${DIST}/repeatable.min.js` },
 ];
 
 const options = {

@@ -60,11 +60,13 @@ window.addMultiSelect = function (elt) {
 };
 
 $(document).ready(function () {
+    // Selects inside a repeatable row are registered by RoroRepeatable itself
+    // (with regenerated ids), so skip them here to avoid double registration.
     $('.roro-wrapper-select').each(function () {
-        addSelect($(this));
+        if (!$(this).closest('.roro-repeatable-row').length) addSelect($(this));
     });
 
     $('.roro-wrapper-multi-select').each(function () {
-        addMultiSelect($(this));
+        if (!$(this).closest('.roro-repeatable-row').length) addMultiSelect($(this));
     });
 });

@@ -70,6 +70,13 @@ Here’s an example of a fully functional form using Roro Form components:
     <!-- File Upload -->
     <x-roro-file :multiple="true" id="file-upload" name="file[]" label="Upload Files" placeholder="Choose files" requirements-text="Accepted formats: jpg, gif"/>
 
+    <!-- Repeatable group (rows submit as contacts[0][name], contacts[1][name], ...) -->
+    <x-roro-repeatable name="contacts" label="Contacts" item-label="Contact" :min="1" :max="5" :reorder="true">
+        <x-roro-text name="name" label="Name" :required="true"/>
+        <x-roro-email name="email" label="Email"/>
+        <x-roro-select name="type" :options="['mobile'=>'Mobile','home'=>'Home']" label="Type"/>
+    </x-roro-repeatable>
+
     <!-- Submit Button -->
     <x-roro-button :ajax="true" form-id="form-tutorial">Send</x-roro-button>
 </x-roro-form>
@@ -143,6 +150,83 @@ roroAddOptionsAjax('country', '/api/countries', { q: 'ge' });
 
 ---
 
+## Repeatable groups
+
+`<x-roro-repeatable>` repeats **whatever you nest inside it** — one or many fields,
+of any type, including selects, multi-selects and file inputs. The user can add,
+remove and (optionally) reorder rows; everything submits as a clean array.
+
+```blade
+<x-roro-repeatable name="contacts" label="Contacts" :min="1" :max="5">
+    <x-roro-text name="name" label="Name" :required="true"/>
+    <x-roro-email name="email" label="Email"/>
+    <x-roro-select name="type" :options="['mobile' => 'Mobile', 'home' => 'Home']" label="Type"/>
+</x-roro-repeatable>
+```
+
+Inner field names are **relative to the row** (`name`, `email`, `type`) — the
+component prefixes them automatically, so the form posts:
+
+```php
+$request->input('contacts');
+// [
+//   ['name' => 'Alice', 'email' => 'alice@x.com', 'type' => 'mobile'],
+//   ['name' => 'Bob',   'email' => 'bob@x.com',   'type' => 'home'],
+// ]
+```
+
+### Prefilling (edit forms) & validation
+
+Pass an array of rows via `:rows` (or `:populate`). After a failed validation the
+re-submitted `old()` input is restored automatically — no extra wiring:
+
+```blade
+<x-roro-repeatable name="contacts" :rows="$user->contacts->toArray()">
+    <x-roro-text name="name" label="Name" :required="true"/>
+    <x-roro-select name="type" :options="$types"/>
+</x-roro-repeatable>
+```
+
+`required` (and any HTML constraints) on the inner fields are enforced per row;
+the hidden blueprint is inert, so it never blocks submission.
+
+### Flat lists of scalars
+
+For a plain list (`tags[]`) use the `index-token` (default `#`) and place it
+where the index should go:
+
+```blade
+<x-roro-repeatable name="tags" index-token="#" :rows="['red', 'green']">
+    <x-roro-text name="tags[#]" placeholder="Tag"/>
+</x-roro-repeatable>
+{{-- posts: tags => ['red', 'green'] --}}
+```
+
+Or turn indexing off entirely with `:indexed="false"` and keep your own names
+(`<x-roro-text name="tags[]"/>` → posts the same flat `tags` array).
+
+### Attributes
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `name` | — | Array prefix the rows submit under (e.g. `contacts`). |
+| `:rows` | `[]` | Initial dataset: an array of rows (objects, or scalars in token mode). |
+| `:min` | `1` | Minimum number of rows (can't remove below it). |
+| `:max` | `null` | Maximum number of rows (`null` = unlimited; Add disables at the cap). |
+| `reorder` | `false` | Reordering: `true`/`"buttons"` (▲▼), `"drag"` (drag handle, no dependency), or `"both"`. Drag is desktop-only — pair with buttons (`"both"`) for touch/keyboard. |
+| `item-label` | `null` | Per-row heading prefix, numbered automatically (`Contact 1`, `Contact 2`…). |
+| `key-field` | `null` | Inner field whose value uniquely identifies a row (e.g. `id`) — lets JS target a row by a **stable key** instead of position. |
+| `add-label` | `+ Add` | Text/markup of the add button. |
+| `remove-label` | `✕` | Text/markup of the per-row remove button. |
+| `index-token` | `''` | If set (e.g. `#`), replaces the token in inner names instead of auto-prefixing — use for flat lists or full control. |
+| `:indexed` | `true` | Set to `false` to leave inner names **verbatim** (no `prefix[i]`/token) — you control the naming (e.g. `name="aliases[]"` posts a flat `aliases` array). |
+| `row-class` | `''` | Extra classes applied to every row. |
+
+Selects, multi-selects and file inputs added in new rows are wired up exactly like
+on page load (regenerated ids, registered instances) — nothing extra to call.
+
+---
+
 ## JavaScript helpers
 
 Roro Form ships a small, dependency-free (jQuery-based) facade so you can drive
@@ -197,6 +281,43 @@ roro('country').removeOption('fr');
 roro('country').options();           // -> [{label, value, category}, ...]
 roro('country').open();  roro('country').close();
 ```
+
+### Repeatables
+
+```js
+roro('contacts').addRow();                                   // append an empty row
+roro('contacts').addRow({ name: 'Ada', type: 'home' });      // append a prefilled row
+roro('contacts').removeRow(0);                               // remove the first row
+roro('contacts').rowsCount();                               // -> 2
+roro('contacts').value();                                   // -> [{name, email, type}, ...]
+roro('contacts').value([{ name: 'Ada' }, { name: 'Bob' }]); // replace every row
+roro('contacts').change(rows => console.log('changed', rows));
+```
+
+Flat one-liners: `roroAddRow('contacts', data)` · `roroRemoveRow('contacts', 0)` ·
+`roroRows('contacts')` · `roroRowsCount('contacts')` · `roroClearRows('contacts')`.
+
+Need to act on **one specific row**? `roro('contacts').row(target)` returns a row
+handle. Prefer identifying rows by a **stable key** rather than by position — add
+`key-field="id"` to the component (with an `id` field, often hidden, per row):
+
+```js
+const row = roro('contacts').row(12);         // the row whose id is 12 — stable across reorder/remove
+row.field('email').value('a@b.c');            // drive one field of that row
+row.field('type').disable();                  // works on nested selects too
+row.lockRemoval();                            // disable its remove button (front-end lock)
+row.disable();                                // disable every field in the row
+row.value({ name: 'Ada', type: 'home' });     // set the whole row; row.value() to read it
+row.moveUp();  row.moveDown();  row.remove();  row.key();  row.index();
+
+roro('contacts').rowAt(0);                     // by position, explicitly
+roro('contacts').rowWhere(r => r.email === 'a@b.c'); // by predicate (row data)
+roro('contacts').rowHandles();                 // every row as a handle
+```
+
+Without a `key-field`, `row(i)` falls back to the position. Flat helpers:
+`roroRow('contacts', 12)` · `roroRowField('contacts', 12, 'email')` ·
+`roroLockRow('contacts', 12)`.
 
 ### The `roro.form()` facade
 

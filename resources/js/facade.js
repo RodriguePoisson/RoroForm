@@ -40,6 +40,7 @@
         const $w = $wrapperOf(id);
         if ($w.hasClass('roro-wrapper-select')) return 'select';
         if ($w.hasClass('roro-wrapper-multi-select')) return 'multi-select';
+        if ($w.hasClass('roro-wrapper-repeatable')) return 'repeatable';
 
         const $el = $byId(id);
         if ($el.is('form')) return 'form';
@@ -55,6 +56,11 @@
     // Underlying RoroSelect / RoroMultiSelect instance (or null).
     function getSelectInstance(id) {
         return (window.listOfSelect || []).find(s => s.id === 'roro-wrapper-' + id) || null;
+    }
+
+    // Underlying RoroRepeatable instance (or null).
+    function getRepeatableInstance(id) {
+        return (window.listOfRepeatable || []).find(r => r.id === 'roro-wrapper-' + id) || null;
     }
 
     // ---- form (de)serialization --------------------------------------------
@@ -78,6 +84,11 @@
     function fillForm($form, data) {
         Object.keys(data).forEach(name => {
             const value = data[name];
+
+            // Repeatable group (matched by its wrapper data-name).
+            const $rep = $form.find('.roro-wrapper-repeatable')
+                .filter((i, el) => nameEq($(el).data('name'), name));
+            if ($rep.length) { new RoroHandle(String($rep.data('id'))).value(value); return; }
 
             // Custom multi-select (matched by its wrapper data-name).
             const $ms = $form.find('.roro-wrapper-multi-select')
@@ -133,6 +144,7 @@
         $el() { return $byId(this.id); }
         el() { return this.$el()[0] || null; }
         select() { return getSelectInstance(this.id); }
+        repeatable() { return getRepeatableInstance(this.id); }
 
         // The primary interactive node (text input of a select, otherwise $el).
         $control() {
@@ -145,7 +157,7 @@
 
         $wrapper() {
             const t = this.type();
-            if (t === 'select' || t === 'multi-select') return $wrapperOf(this.id);
+            if (t === 'select' || t === 'multi-select' || t === 'repeatable') return $wrapperOf(this.id);
             return roroGetWrapper(this.id);
         }
 
@@ -196,6 +208,12 @@
                 if (!v) this.clear(); // files can't be set programmatically, only cleared
                 return this;
             }
+            if (t === 'repeatable') {
+                const r = this.repeatable();
+                if (get) return r ? r.getValue() : [];
+                if (r) r.ready.then(() => r.setValue(v));
+                return this;
+            }
 
             const $el = this.$el();
             if (get) return $el.val();
@@ -206,6 +224,7 @@
 
         clear() {
             const t = this.type();
+            if (t === 'repeatable') return this._withRepeatable(r => r.setValue([]));
             if (t === 'select' || t === 'multi-select') return this._withSelect(s => s.clearInput());
             if (t === 'checkbox') { this.$el().prop('checked', false).trigger('change'); return this; }
             if (t === 'radio') {
@@ -292,7 +311,7 @@
         trigger(event, extra) { this.$control().trigger(event, extra); return this; }
         change(fn) {
             const t = this.type();
-            if (t === 'select' || t === 'multi-select') {
+            if (t === 'select' || t === 'multi-select' || t === 'repeatable') {
                 $wrapperOf(this.id).on('roro:change', (e, val) => fn(val, e));
                 return this;
             }
@@ -364,6 +383,91 @@
         open() { roroShowDropDown(this.id, true); return this; }
         close() { roroShowDropDown(this.id, false); return this; }
         toggleOpen() { return this._withSelect(s => s.toggleDropDown()); }
+
+        // -- repeatable-only (no-op on other types) --
+        _withRepeatable(cb) {
+            const r = this.repeatable();
+            if (r) r.ready.then(() => cb(r));
+            return this;
+        }
+        addRow(data = null) { return this._withRepeatable(r => r.addRow(data, false)); }
+        removeRow(index) {
+            return this._withRepeatable(r => {
+                const $row = (index && index.jquery)
+                    ? index
+                    : r.rowsContainer.children('.roro-repeatable-row').eq(parseInt(index, 10) || 0);
+                if ($row && $row.length) r.removeRow($row);
+            });
+        }
+        clearRows() { return this._withRepeatable(r => r.setValue([])); }
+        rows() { const r = this.repeatable(); return r ? r.getValue() : []; }
+        rowsCount() { const r = this.repeatable(); return r ? r.count() : 0; }
+
+        // A handle on a single row. With a key-field, `target` is the row's KEY
+        // (stable); otherwise it's a position. Use rowAt()/rowWhere() to be explicit.
+        row(target) {
+            const r = this.repeatable();
+            return new RoroRepeatableRowHandle(r, r ? r.rowEl(target) : $());
+        }
+        rowAt(index) {
+            const r = this.repeatable();
+            return new RoroRepeatableRowHandle(r, r ? r.rowAt(index) : $());
+        }
+        rowWhere(predicate) {
+            const r = this.repeatable();
+            if (!r) return new RoroRepeatableRowHandle(null, $());
+            const el = r.rowsContainer.children('.roro-repeatable-row').toArray()
+                .find(el => { try { return predicate(r.readRow(el), $(el)); } catch (e) { return false; } });
+            return new RoroRepeatableRowHandle(r, el ? $(el) : $());
+        }
+        rowHandles() {
+            const r = this.repeatable();
+            if (!r) return [];
+            return r.rowsContainer.children('.roro-repeatable-row').toArray()
+                .map(el => new RoroRepeatableRowHandle(r, $(el)));
+        }
+    }
+
+    // ---- repeatable row handle ---------------------------------------------
+
+    class RoroRepeatableRowHandle {
+        constructor(repeatable, $row) { this.r = repeatable; this.$row = $row; }
+
+        $el() { return this.$row; }
+        exists() { return !!(this.$row && this.$row.length); }
+        index() { return this.exists() ? this.$row.index() : -1; }
+        key() { return this.exists() && this.r ? this.r.rowKey(this.$row) : undefined; }
+
+        // Drive one field of this row by its blueprint name -> a full RoroHandle.
+        field(name) { return new RoroHandle(this.r ? this.r.rowFieldId(this.$row, name) : null); }
+        fields() {
+            if (!this.exists()) return [];
+            return roro.all(this.$row);
+        }
+
+        value(data) {
+            if (!this.exists()) return data === undefined ? null : this;
+            if (data === undefined) return this.r.readRow(this.$row[0]);
+            if (data === null || typeof data !== 'object') {
+                const $single = this.$row.find('.roro-repeatable-row-content :input[name]').first();
+                if ($single.length) new RoroHandle($single.attr('id')).value(data);
+                return this;
+            }
+            Object.keys(data).forEach(k => this.field(k).value(data[k]));
+            return this;
+        }
+
+        remove() { if (this.exists()) this.r.removeRow(this.$row); return this; }
+        lockRemoval(b = true) { if (this.exists()) this.r.lockRow(this.$row, b); return this; }
+        allowRemoval() { return this.lockRemoval(false); }
+        isRemovable() { return this.exists() && !this.r.isRowLocked(this.$row)
+            && this.r.count() > this.r.min; }
+
+        disable(b = true) { if (this.exists()) this.r.disableRow(this.$row, b); return this; }
+        enable() { return this.disable(false); }
+
+        moveUp() { if (this.exists()) this.r.moveRow(this.$row, -1); return this; }
+        moveDown() { if (this.exists()) this.r.moveRow(this.$row, 1); return this; }
     }
 
     // ---- form handle -------------------------------------------------------
@@ -379,6 +483,10 @@
             if ($byId(nameOrId).length || $wrapperOf(nameOrId).length) return new RoroHandle(nameOrId);
 
             const $f = this.$el();
+            const $rep = $f.find('.roro-wrapper-repeatable')
+                .filter((i, el) => nameEq($(el).data('name'), nameOrId));
+            if ($rep.length) return new RoroHandle(String($rep.data('id')));
+
             const $ms = $f.find('.roro-wrapper-multi-select')
                 .filter((i, el) => nameEq($(el).data('name'), nameOrId));
             if ($ms.length) return new RoroHandle(String($ms.data('id')));
@@ -457,13 +565,14 @@
     roro.field = (target) => new RoroHandle(toId(target));
     roro.form = (target) => new RoroFormHandle(toId(target));
     roro.select = (target) => getSelectInstance(toId(target));
+    roro.repeatable = (target) => getRepeatableInstance(toId(target));
     roro.exists = (target) => roro(target).exists();
     roro.ready = (fn) => { $(fn); return roro; };
     roro.all = function (root) {
         const $root = root ? $(root) : $(document);
         const ids = new Set();
         $root.find('.roro-input[id]').each(function () { ids.add($(this).attr('id')); });
-        $root.find('.roro-wrapper-select, .roro-wrapper-multi-select').each(function () {
+        $root.find('.roro-wrapper-select, .roro-wrapper-multi-select, .roro-wrapper-repeatable').each(function () {
             const id = $(this).data('id');
             if (id != null) ids.add(String(id));
         });
@@ -475,7 +584,9 @@
     window.roro = roro;
     window.RoroHandle = RoroHandle;
     window.RoroFormHandle = RoroFormHandle;
+    window.RoroRepeatableRowHandle = RoroRepeatableRowHandle;
     window.roroGetSelect = getSelectInstance;
+    window.roroGetRepeatable = getRepeatableInstance;
 
     window.roroField = (id) => roro.field(id);
     window.roroValue = (id, v) => roro(id).value(v);
@@ -491,6 +602,15 @@
     window.roroClearError = (id) => roro(id).clearError();
     window.roroOnChange = (id, fn) => roro(id).change(fn);
     window.roroLabel = (id, text) => roro(id).label(text);
+
+    window.roroAddRow = (id, data) => roro(id).addRow(data);
+    window.roroRemoveRow = (id, index) => roro(id).removeRow(index);
+    window.roroClearRows = (id) => roro(id).clearRows();
+    window.roroRows = (id) => roro(id).rows();
+    window.roroRowsCount = (id) => roro(id).rowsCount();
+    window.roroRow = (id, target) => roro(id).row(target);
+    window.roroRowField = (id, target, name) => roro(id).row(target).field(name);
+    window.roroLockRow = (id, target, b = true) => roro(id).row(target).lockRemoval(b);
 
     window.roroAddOptions = (id, list) => roro(id).addOptions(list);
     window.roroRemoveOption = (id, value) => roro(id).removeOption(value);

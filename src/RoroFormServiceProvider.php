@@ -23,12 +23,14 @@ use RoroForm\View\Components\Inputs\Password;
 use RoroForm\View\Components\Inputs\Radio;
 use RoroForm\View\Components\Inputs\RadioContainer;
 use RoroForm\View\Components\Inputs\Range;
+use RoroForm\View\Components\Inputs\Repeatable;
 use RoroForm\View\Components\Inputs\Select;
 use RoroForm\View\Components\Inputs\Tel;
 use RoroForm\View\Components\Inputs\Time;
 use RoroForm\View\Components\Inputs\Url;
 use RoroForm\View\Components\Inputs\Week;
 use RoroForm\View\Components\MultiSelectTextTag;
+use RoroForm\View\Components\RepeatableHelper;
 use RoroForm\View\Components\RequiredLabel;
 use RoroForm\View\Components\Inputs\Text;
 use RoroForm\View\Components\Overlay;
@@ -57,6 +59,7 @@ class RoroFormServiceProvider extends ServiceProvider
         Blade::component('roro-helper', Helper::class);
         Blade::component('roro-select-helper', SelectHelper::class);
         Blade::component('roro-file-helper', FileHelper::class);
+        Blade::component('roro-repeatable-helper', RepeatableHelper::class);
         Blade::component('roro-button', Button::class);
         Blade::component('roro-overlay', Overlay::class);
         Blade::component('roro-spinner', Spinner::class);
@@ -85,6 +88,7 @@ class RoroFormServiceProvider extends ServiceProvider
         Blade::component('roro-border-error', BorderError::class);
         Blade::component('roro-radio-container', RadioContainer::class);
         Blade::component('roro-radio', Radio::class);
+        Blade::component('roro-repeatable', Repeatable::class);
         Blade::component('roro-required-label', RequiredLabel::class);
     }
 
