@@ -9,7 +9,7 @@
         @if($subtitle)
             <p class="{{$subtitleClass}}">{{$subtitle}}</p>
         @endif
-        <div class="roro-input d-flex gap-3 mb-3 {{$wrapperClass}}">
+        <div class="roro-input d-flex flex-column flex-sm-row flex-sm-wrap gap-2 gap-sm-3 mb-3 {{$wrapperClass}}">
             {{$slot}}
         </div>
         <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
