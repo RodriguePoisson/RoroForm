@@ -143,6 +143,107 @@ roroAddOptionsAjax('country', '/api/countries', { q: 'ge' });
 
 ---
 
+## JavaScript helpers
+
+Roro Form ships a small, dependency-free (jQuery-based) facade so you can drive
+any field or form from JavaScript without caring about its underlying markup.
+Everything is **chainable** and **type-aware** — the same call works on a text
+input, a select, a checkbox or a file field.
+
+### The `roro()` facade
+
+```js
+roro('email')                 // -> handle, auto-detecting the field type
+    .value('john@example.com') // set (chainable) ; roro('email').value() to read
+    .required()                // toggle the HTML required flag
+    .focus();
+
+roro('age').disable();         // works on every input type
+roro('age').error('Too young'); roro('age').clearError();
+roro('newsletter').value(true);            // checkbox  -> boolean
+roro('satisfaction').value(80);            // range
+roro('file-upload').value();               // file      -> ['a.png', ...]
+```
+
+`value()` is universal: it reads/writes the right thing per type — text for
+inputs, the selected option for a `select`, an **array** for a multi-select, the
+checked state for a checkbox, the checked value for a radio group, file names for
+a file input.
+
+| Group   | Methods |
+|---------|---------|
+| Value   | `value(v?)` · `val(v?)` · `clear()` · `reset()` |
+| State   | `disable(b=true)` · `enable()` · `readonly(b=true)` · `editable()` · `required(b=true)` · `optional()` · `isDisabled()` · `isReadonly()` · `isRequired()` |
+| Display | `show()` · `hide()` · `toggle(b?)` · `isVisible()` · `label(t?)` · `placeholder(t?)` |
+| Error   | `error(msg)` · `clearError()` |
+| Events  | `on(ev, fn)` · `off(ev, fn)` · `trigger(ev)` · `change(fn)` · `input(fn)` · `click(fn)` · `focus()` · `blur()` |
+| Misc    | `type()` · `name()` · `exists()` · `$el()` · `$control()` · `$wrapper()` · `attr()` · `prop()` · `addClass()` / `removeClass()` / `toggleClass()` |
+
+### Selects
+
+The handle exposes the full select API and a real **`change` event** (fired only
+on actual user/programmatic changes, never on page load):
+
+```js
+roro('country')
+    .addOption('France', 'fr', 'Europe')          // one option (client-side)
+    .addOptions([{ label: 'Spain', value: 'es' }])// batch
+    .value('fr')                                  // select it
+    .change(value => console.log('picked', value));
+
+roro('country').addOptionsAjax('/api/countries', { q: 'fr' }); // returns a promise
+roro('country').setOptions([...]);   // replace every option
+roro('country').removeOption('fr');
+roro('country').options();           // -> [{label, value, category}, ...]
+roro('country').open();  roro('country').close();
+```
+
+### The `roro.form()` facade
+
+```js
+const form = roro.form('signup');
+
+form.data();                       // -> plain object of every field value
+form.fill({ name: 'Ada', country: 'fr', tags: ['a', 'b'] }); // prefill (edit flows)
+form.onSuccess(res => console.log('saved', res))
+    .onError(xhr  => console.log('failed', xhr));
+form.validate();                   // native reportValidity()
+form.errors({ email: ['Already taken'] });  // show server-side errors
+form.clearErrors();
+form.submit();                     // honours the AJAX <x-roro-button> if present
+form.disable();  form.enable();    // every field at once
+form.reset();    form.overlay(true);
+form.field('email').focus();       // resolve a field by name **or** id
+```
+
+`fill()` matches keys against field **names** first (so it maps straight onto
+your server payload / `old()` data) and falls back to element **ids** for
+convenience.
+
+### One-liner helpers
+
+Every facade method also has a flat `window.roro*` shortcut, handy for quick
+inline calls:
+
+```js
+roroValue('email', 'a@b.c');     roroValue('email');      // get/set
+roroDisable('age');  roroEnable('age');  roroReadonly('age');  roroRequired('age');
+roroShow('age');     roroHide('age');    roroFocus('email');  roroClearError('age');
+roroOnChange('country', v => ...);
+roroAddOptions('country', [...]);  roroSetOptions('country', [...]);  roroClearOptions('country');
+roroRemoveOption('country', 'fr'); roroOptions('country');
+
+roroFormData('signup');          roroFillForm('signup', data);
+roroSubmit('signup');            roroValidateForm('signup');   roroResetForm('signup');
+roroFormErrors('signup', errs);  roroClearFormErrors('signup');
+roroOnSuccess('signup', fn);     roroOnError('signup', fn);
+```
+
+> All the previous globals (`roroAddOption`, `roroShowError`, `roroShowOverlay`,
+> `roroDisableSelect`, …) keep working unchanged — the facade is purely additive.
+
+---
+
 ## Publishing Assets
 
 After installing **Roro Form**, you may want to customize its views or configuration.

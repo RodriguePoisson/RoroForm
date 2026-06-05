@@ -6,6 +6,7 @@
             {!! file_get_contents(realpath($getJsPath() . 'global.min.js')) !!}
             {!! file_get_contents(realpath($getJsPath() . 'form.min.js')) !!}
             {!! file_get_contents(realpath($getJsPath() . 'inputs.min.js')) !!}
+            {!! file_get_contents(realpath($getJsPath() . 'facade.min.js')) !!}
         </script>
     @endpush
 @endonce

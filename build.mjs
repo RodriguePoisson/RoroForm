@@ -27,6 +27,7 @@ const entries = [
     { in: `${SRC}/global.js`, out: `${DIST}/global.min.js` },
     { in: `${SRC}/form.js`, out: `${DIST}/form.min.js` },
     { in: `${SRC}/inputs.js`, out: `${DIST}/inputs.min.js` },
+    { in: `${SRC}/facade.js`, out: `${DIST}/facade.min.js` },
     { in: `${SRC}/Models/Selectable.js`, out: `${DIST}/Selectable.min.js` },
     { in: `${SRC}/select.js`, out: `${DIST}/select.min.js` },
     { in: `${SRC}/Models/RoroFile.js`, out: `${DIST}/RoroFile.min.js` },

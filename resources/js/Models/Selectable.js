@@ -65,12 +65,21 @@ class Selectable extends Input {
     }
 
     init() {
+        this._initializing = true;
         this.readDom();
         this.bindBaseEvents();
         this.showDropDown();
         this.initValues();
         this.handleDisableReadonly();
+        this._initializing = false;
         return this;
+    }
+
+    // Fire 'roro:change' on the wrapper whenever the value changes — but stay
+    // silent during the initial population so handlers don't run on load.
+    emitChange() {
+        if (this._initializing) return;
+        if (this.elt) this.elt.trigger('roro:change', [this.getValue()]);
     }
 
     // Read the options + categories already rendered server-side in the dropdown.
@@ -298,6 +307,7 @@ class Select extends Selectable {
                 .val(value)
                 .appendTo(this.elt);
         }
+        this.emitChange();
     }
 
     getValue() {
@@ -381,6 +391,7 @@ class MultiSelect extends Selectable {
             if (this.isReadonly()) $input.attr('readonly', true);
             $input.appendTo(this.elt);
         });
+        this.emitChange();
     }
 
     getValue() {
