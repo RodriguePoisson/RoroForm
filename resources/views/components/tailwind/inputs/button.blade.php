@@ -4,7 +4,7 @@
     'mt-6' => $hasTopMargins,
     $buttonColor,
     $buttonTextColor,
-    'font-semibold py-2 px-4 sm:py-3 sm:px-6 rounded-lg shadow-md transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-60',
     'hover:'.$buttonHoverColor,
     $class,
 ]) }} id="{{$id}}" data-ajax-errors="{{$enableAjaxErrors}}" data-ajax="{{$ajax}}">

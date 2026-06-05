@@ -3,7 +3,7 @@
      class="roro-wrapper roro-wrapper-color w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
 
     @if($label)
-        <label id="label-{{$id}}" for="{{ $id }}" class="block text-gray-700 font-medium mb-1 {{$labelClass}}">
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-color block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -29,7 +29,7 @@
 
             <label id="label-{{$id}}" for="{{ $id }}"
                    class="roro-label roro-label-color h-12 w-12 rounded-full border border-gray-300 shadow cursor-pointer transition
-                      peer-focus:ring-2 peer-focus:ring-blue-500 peer-focus:border-blue-500
+                      peer-focus:ring-2 peer-focus:ring-blue-200 peer-focus:border-blue-500
                       "
                    style="background-color: {{ $value }};">
             </label>
@@ -39,7 +39,7 @@
                 style="@if($hideTextInput) display:none;@endif"
                 value="{{ $value }}"
                 readonly
-                class="roro-input flex-1 px-3 py-2 border rounded-md bg-gray-50 text-gray-700 text-sm font-mono select-none
+                class="roro-input flex-1 rounded-lg border border-gray-300 px-3.5 py-2.5 bg-gray-50 text-gray-700 text-sm font-mono select-none
                    focus:outline-none cursor-default"
             >
         </div>

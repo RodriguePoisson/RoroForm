@@ -1,8 +1,8 @@
 {{--
-    Rend les options (et categories) d'un select cote SERVEUR, directement dans
-    le dropdown. Format de $options :
-      ['Groupe' => ['cle' => 'Label', ...], 'cleSimple' => 'Label simple', ...]
-    Une valeur tableau => categorie (avec ses options) ; sinon => option simple.
+    Renders a select's options (and categories) SERVER-SIDE, straight into the
+    dropdown. $options format:
+      ['Group' => ['key' => 'Label', ...], 'simpleKey' => 'Simple label', ...]
+    An array value => category (with its options); otherwise => a single option.
 --}}
 @foreach ($options as $key => $value)
     @if (is_array($value))

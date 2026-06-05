@@ -10,7 +10,7 @@
      class="roro-wrapper roro-wrapper-multi-select w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
 
     @if($label)
-        <label id="label-{{$id}}" data-id="{{$id}}" class="roro-label roro-label-multi-select block text-gray-700 font-medium mb-1 {{$labelClass}}">
+        <label id="label-{{$id}}" data-id="{{$id}}" class="roro-label roro-label-multi-select block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -26,7 +26,7 @@
                     contenteditable="true"
                     placeholder="{{ $placeholder }}"
                     {{ $attributes->class([
-                        'roro-select-text-input w-full border py-2 pl-3 pr-10 focus:outline-none flex gap-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 placeholder-gray-400 sm:text-sm md:text-base lg:text-lg transition-colors duration-200',
+                        'roro-select-text-input flex flex-wrap items-center gap-1.5 w-full min-h-[2.625rem] rounded-lg border border-gray-300 bg-white py-2 pl-3.5 pr-10 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200',
                         $class,
                     ]) }}
                     {{ ($required && !$disableJsValidation)? 'required' : '' }}
@@ -42,11 +42,11 @@
                 </button>
             </div>
 
-            <div data-id="{{$id}}" class="roro-select-dropdown absolute z-10 mt-1 w-full bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto">
+            <div data-id="{{$id}}" class="roro-select-dropdown absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-60 overflow-y-auto">
                 @include("roroform::components.{$theme}.select-options", ['options' => $options])
             </div>
 
-            {{-- Templates (caches) clones par le JS pour les ajouts dynamiques (option/categorie/tag). --}}
+            {{-- Hidden templates cloned by the JS for dynamic adds (option/category/tag). --}}
             <div class="roro-select-templates" hidden aria-hidden="true">
                 <x-roro-select-option/>
                 <x-roro-select-category/>

@@ -7,8 +7,8 @@ class Radio extends CheckableMain
     protected string $view = 'inputs.radio';
 
     /**
-     * Un radio est coche uniquement si la valeur repeuplee correspond a SA propre
-     * valeur (on ne touche pas a $this->value, contrairement a un checkbox).
+     * A radio is checked only when the repopulated value matches ITS own value
+     * (unlike a checkbox, $this->value is left untouched).
      */
     protected function populateValue(): void
     {

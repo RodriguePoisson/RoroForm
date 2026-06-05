@@ -1,8 +1,8 @@
 /**
  * --------------------------
- *  Option / Categorie
- *  De simples enveloppes autour des noeuds DOM rendus cote serveur.
- *  (Plus aucune instanciation AJAX : on lit / clone le DOM existant.)
+ *  Option / Category
+ *  Thin wrappers around the DOM nodes rendered server-side (no AJAX: we read
+ *  and clone the existing DOM).
  * --------------------------
  */
 class RoroOption {
@@ -19,7 +19,7 @@ class RoroOption {
     }
 
     bindClick(select) {
-        // namespace .roro + off() prealable => zero double-binding apres re-render.
+        // .roro namespace + off() first => no double-binding after a re-render.
         this.elt.off('click.roro').on('click.roro', () => select.handleOptionClick(this));
     }
 
@@ -46,7 +46,7 @@ class RoroCategory {
 
 /**
  * --------------------------
- *  Selectable (classe de base)
+ *  Selectable (base class)
  * --------------------------
  */
 class Selectable extends Input {
@@ -58,8 +58,8 @@ class Selectable extends Input {
         super('select', id, prefixId);
         this.values = values;
 
-        // On CHAINE l'init apres que le wrapper soit recupere (au lieu d'ecraser
-        // la promesse du parent) : plus de couplage temporel fragile.
+        // Chain init after the wrapper has been resolved (instead of overwriting
+        // the parent's promise) to avoid a fragile timing dependency.
         const baseReady = this.ready;
         this.ready = baseReady.then(() => this.init());
     }
@@ -73,7 +73,7 @@ class Selectable extends Input {
         return this;
     }
 
-    /** Lit les options + categories deja rendues cote serveur dans le dropdown. */
+    // Read the options + categories already rendered server-side in the dropdown.
     readDom() {
         this.categories = this.dropdown.find('.roro-select-category').get()
             .map(node => new RoroCategory($(node)));
@@ -82,7 +82,7 @@ class Selectable extends Input {
         this.options.forEach(option => option.bindClick(this));
     }
 
-    // Surcharges enfant.
+    // Child overrides.
     initValues() {}
     actualize() {}
     clearInput() { throw new Error('clearInput() must be implemented in child class'); }
@@ -91,7 +91,7 @@ class Selectable extends Input {
     handleOptionClick() { throw new Error('handleOptionClick() must be implemented in child class'); }
 
     /**
-     * ---------- Ajout dynamique (clone client-side, zero reseau) ----------
+     * ---------- Dynamic add (client-side clone, no request) ----------
      */
     addOption(label, value, categoryLabel = null) {
         const $option = this.templates.children('.roro-select-option').clone();
@@ -134,7 +134,7 @@ class Selectable extends Input {
     }
 
     /**
-     * ---------- Filtrage ----------
+     * ---------- Filtering ----------
      */
     filterOptions(filterText = '') {
         const needle = filterText.toLowerCase();
@@ -152,7 +152,7 @@ class Selectable extends Input {
     }
 
     /**
-     * ---------- Etats ----------
+     * ---------- State ----------
      */
     isDisabled() { return this.elt.data('disable'); }
     isReadonly() { return this.elt.data('readonly'); }
@@ -181,7 +181,7 @@ class Selectable extends Input {
     }
 
     /**
-     * ---------- Dropdown (refs DOM memoisees) ----------
+     * ---------- Dropdown (memoized DOM refs) ----------
      */
     get selectWrapper() { return (this._selectWrapper ??= $('#' + this.id)); }
     get dropdown() { return (this._dropdown ??= this.selectWrapper.find('.roro-select-dropdown')); }
@@ -198,7 +198,7 @@ class Selectable extends Input {
     }
 
     /**
-     * ---------- Evenements ----------
+     * ---------- Events ----------
      */
     bindBaseEvents() {
         this.textInput.on('input', () => {
@@ -254,7 +254,7 @@ class Select extends Selectable {
         }
     }
 
-    // Etat "rien de selectionne" (partage entre le cas null et le cas introuvable).
+    // Reset state, shared between the null case and the not-found case.
     resetSelection() {
         this.optionSelected = null;
         this.value = null;
@@ -332,7 +332,7 @@ class MultiSelect extends Selectable {
         this.options
             .filter(option => this.values.includes(option.value))
             .forEach(option => {
-                // Clone le tag depuis le template cache (zero AJAX).
+                // Clone the tag from the cached template.
                 const $tag = this.templates.children('.tag, .caret-zone').clone();
                 const tagId = Selectable.uid('roro-tag');
                 const $tagSpan = $tag.filter('.tag');
@@ -400,8 +400,7 @@ class MultiSelect extends Selectable {
     bindBaseEvents() {
         super.bindBaseEvents();
 
-        // Suppression d'un tag au backspace : le tag disparait du DOM -> on
-        // retire la valeur correspondante.
+        // Backspace removes a tag: the tag disappears from the DOM, so drop its value.
         this.textInput.on('input', () => {
             this.listTag = this.listTag.filter(tag => {
                 if (!this.textInput.find('#' + tag.id).length) {

@@ -1,3 +1,3 @@
 <div id="{{$id}}" style="@if($hidden) display:none; @endif" class="roro-input-error-container">
-    <p class="roro-input-error-message text-red-600 text-sm">{{ $error }}</p>
+    <p class="roro-input-error-message mt-1.5 text-sm text-red-600">{{ $error }}</p>
 </div>

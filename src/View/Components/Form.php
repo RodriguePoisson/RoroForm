@@ -23,7 +23,7 @@ class Form extends ComponentMain
 
         $this->id ??= uniqid();
 
-        // Un enctype explicite prend le pas sur le raccourci multipart.
+        // An explicit enctype takes precedence over the multipart shortcut.
         if ($this->enctype) {
             $this->multipart = false;
         }

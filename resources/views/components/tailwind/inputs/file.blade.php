@@ -4,7 +4,7 @@
 
     @if($label)
         <label id="label-{{$id}}" for="{{ $id }}"
-               class="roro-label roro-label-file block text-gray-700 font-medium mb-1 {{$labelClass}}">
+               class="roro-label roro-label-file block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -13,8 +13,7 @@
     @endif
 
     <x-roro-border-error :hidden="!$error || !$enableError">
-        <div class="roro-drop-zone drop-zone flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer
-                    hover:border-blue-400 hover:bg-blue-50 transition relative {{$class}}">
+        <div class="roro-drop-zone drop-zone flex flex-col items-center justify-center gap-1 w-full h-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer transition hover:border-blue-400 hover:bg-blue-50 relative {{$class}}">
 
             <span class="font-medium text-gray-700">
                 {{ $placeholder}}

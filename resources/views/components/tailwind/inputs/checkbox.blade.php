@@ -17,14 +17,14 @@
             @endif
 {{ ($required && !$disableJsValidation)? 'required' : '' }}
         {{ $attributes->class([
-            'roro-input roro-input-checkbox h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 transition-colors duration-200',
+            'roro-input roro-input-checkbox h-4 w-4 rounded border-gray-300 text-blue-600 shadow-sm transition focus:ring-2 focus:ring-blue-200 focus:ring-offset-0',
             $class,
         ]) }}
         @if($checked) checked @endif
     >
 
     @if($label)
-        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-checkbox {{ $labelClass }}">
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-checkbox text-sm font-medium text-gray-700 {{ $labelClass }}">
             {{ $label }} @if($required)<x-roro-required-label></x-roro-required-label>@endif
         </label>
     @endif

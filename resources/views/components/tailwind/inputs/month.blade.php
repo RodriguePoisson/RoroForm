@@ -3,7 +3,7 @@
 
     @if($label)
         <label id="label-{{$id}}" for="{{ $id }}"
-               class="roro-label roro-label-month block text-gray-700 font-semibold mb-2 {{$labelClass}}">
+               class="roro-label roro-label-month block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -32,7 +32,7 @@
                 @if(!is_null($max)) max="{{ $max }}" @endif
                 @if(!is_null($step)) step="{{ $step }}" @endif
                 {{ $attributes->class([
-                    'roro-input roro-input-month peer w-full border border-gray-300 bg-white px-4 py-3 text-gray-800 placeholder-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none sm:text-sm md:text-base lg:text-lg transition-all duration-200',
+                    'roro-input roro-input-month block w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500',
                     $class,
                 ]) }}
             >

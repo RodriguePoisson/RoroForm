@@ -1,13 +1,13 @@
 window.listOfSelect = window.listOfSelect || [];
 
-// Retrouve l'instance de select dans le registre global (cle 'roro-wrapper-<id>').
+// Find the select instance in the global registry (keyed by 'roro-wrapper-<id>').
 function findSelect(inputId) {
     return listOfSelect.find(select => select.id === 'roro-wrapper-' + inputId);
 }
 
 /**
- * Ajout dynamique d'UNE option, cote client (synchrone, zero reseau).
- * Ex : roroAddOption('pays', 'France', 'fr', 'Europe')
+ * Add a single option client-side (synchronous, no request).
+ * Example: roroAddOption('country', 'France', 'fr', 'Europe')
  */
 window.roroAddOption = function (inputId, label, value, categoryLabel = null) {
     const select = findSelect(inputId);
@@ -16,13 +16,12 @@ window.roroAddOption = function (inputId, label, value, categoryLabel = null) {
 };
 
 /**
- * Ajout dynamique d'options depuis TON endpoint JSON.
- * GET `url` (avec `params`) doit renvoyer un tableau d'objets :
+ * Add options fetched from a JSON endpoint.
+ * GET `url` (with `params`) must return an array of objects:
  *   [{ "label": "France", "value": "fr", "category": "Europe" }, ...]
- * (la cle "category" est optionnelle).
- * Renvoie une promesse resolue avec la liste recue.
+ * ("category" is optional). Returns a promise resolved with the received list.
  *
- * Ex : roroAddOptionsAjax('pays', '/api/pays', { q: 'fr' })
+ * Example: roroAddOptionsAjax('country', '/api/countries', { q: 'fr' })
  */
 window.roroAddOptionsAjax = function (inputId, url, params = {}) {
     const select = findSelect(inputId);

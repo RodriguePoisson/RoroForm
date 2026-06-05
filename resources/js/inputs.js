@@ -40,8 +40,8 @@ window.roroGetWrapper = function(inputId) {
     let input = $(`#${inputId}`);
     let wrapper = $(`#roro-wrapper-${inputId}`);
 
-    // Un radio n'a pas son propre conteneur d'erreur : on remonte a SON
-    // radio-container parent (et non a TOUS les .roro-wrapper-radio-container).
+    // A radio has no error container of its own: walk up to ITS parent
+    // radio-container (not to ALL .roro-wrapper-radio-container on the page).
     if (input.hasClass('roro-input-radio')) {
         wrapper = input.closest('.roro-wrapper-radio-container');
     }

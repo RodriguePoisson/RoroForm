@@ -45,7 +45,7 @@ abstract class CheckableMain extends InputMain
         );
     }
 
-    /** Un champ cochable est coche des qu'une valeur non vide est repeuplee. */
+    /** A checkable input is checked as soon as a non-empty value is repopulated. */
     protected function onPopulated(string $item): void
     {
         $this->checked = true;

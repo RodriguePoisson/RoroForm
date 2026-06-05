@@ -6,10 +6,10 @@ use RoroForm\View\Components\ComponentMain;
 
 abstract class InputMain extends ComponentMain
 {
-    /** Vue Blade rendue (relative au theme). Definie par chaque feuille. */
+    /** Blade view to render (relative to the theme), set by each leaf. */
     protected string $view;
 
-    /** Message d'erreur de validation, calcule a la construction. */
+    /** Validation error message, computed at construction time. */
     public ?string $error = null;
 
     public function __construct(
@@ -56,7 +56,7 @@ abstract class InputMain extends ComponentMain
         return rtrim($name, '.');
     }
 
-    /** Valeurs `old()` (apres echec de validation), toujours normalisees en tableau. */
+    /** old() values (after a failed validation), always normalized to an array. */
     protected function resolveOld(): array
     {
         $old = old($this->normalizeOldName($this->name), []);
@@ -77,7 +77,7 @@ abstract class InputMain extends ComponentMain
         }
     }
 
-    /** Hook surchargeable : appele quand une valeur non vide a ete repeuplee. */
+    /** Overridable hook: called when a non-empty value has been repopulated. */
     protected function onPopulated(string $item): void {}
 
     protected function getError(): void

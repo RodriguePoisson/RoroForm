@@ -3,8 +3,8 @@
 namespace RoroForm\View\Components;
 
 /**
- * Base commune des petits composants "label + valeur" rendus a la demande
- * (option de select, tag de multi-select). Seule la vue change.
+ * Shared base for the small "label + value" components (select option,
+ * multi-select tag). Only the view differs.
  */
 abstract class LabeledOption extends ComponentMain
 {

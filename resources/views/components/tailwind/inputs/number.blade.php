@@ -1,7 +1,7 @@
 <div id="roro-wrapper-{{$id}}" style="@if($hidden) display:none; @endif"
      class="roro-wrapper roro-wrapper-number w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
     @if($label)
-        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-number block text-gray-700 font-medium mb-1 {{$labelClass}}">
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-number block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
             {{ $label }} @if($required)
                 <x-roro-required-label></x-roro-required-label>
             @endif
@@ -29,7 +29,7 @@
             max="{{ $max ?? 100 }}"
             step="{{ $step ?? 1 }}"
             {{ $attributes->class([
-                'roro-input roro-input-number w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-800 placeholder-gray-400 sm:text-sm md:text-base lg:text-lg transition-colors duration-200',
+                'roro-input roro-input-number block w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500',
                 $class,
             ]) }}
         >

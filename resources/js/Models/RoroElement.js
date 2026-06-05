@@ -1,6 +1,6 @@
 /**
- * Base minimale : recupere un element du DOM par son id (les elements sont
- * desormais rendus cote serveur — plus aucun chargement AJAX ici).
+ * Minimal base: resolves a DOM element by its id. Elements are rendered
+ * server-side, so there is no AJAX loading here.
  */
 class RoroElement {
     constructor(eltType, id = null, prefixId = '') {
@@ -12,14 +12,14 @@ class RoroElement {
     }
 
     async registerElement() {
-        // Laisse le DOM se stabiliser, puis recupere l'element par son id.
+        // Let the DOM settle, then resolve the element by its id.
         await new Promise(resolve => setTimeout(resolve, 0));
         this.elt = $('#' + this.id);
         this.registerEvents();
         return this;
     }
 
-    // A surcharger dans les classes enfants.
+    // Overridden by subclasses.
     registerEvents() {}
 
     syncDom() {}
