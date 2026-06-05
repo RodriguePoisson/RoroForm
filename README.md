@@ -1,171 +1,241 @@
-# Roro Form Package
+<h1 align="center">RoroForm</h1>
 
-Roro Form is a **Laravel package** for building forms using Blade components.  
-It supports multiple input types, AJAX submission, dynamic selects, validation, and more.
+<p align="center">
+  <strong>Build full Laravel forms out of Blade components — and drive every field from JavaScript like it's 2026.</strong>
+</p>
 
-For the moment it's only available with tailwind and JQuery.
+<p align="center">
+  25+ input components · searchable selects · repeatable groups that actually work · a chainable, type-aware JS API · Tailwind &amp; Bootstrap themes — wired into Laravel's <code>old()</code>, validation errors and CSRF out of the box.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/PHP-%5E8.0-777BB4?logo=php&logoColor=white" alt="PHP ^8.0">
+  <img src="https://img.shields.io/badge/Laravel-9%20%E2%86%92%2013-FF2D20?logo=laravel&logoColor=white" alt="Laravel 9 to 13">
+  <img src="https://img.shields.io/badge/themes-Tailwind%20%7C%20Bootstrap-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind | Bootstrap">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0">
+</p>
 
 ---
 
-## Installation
+## Why RoroForm?
 
-Install via Composer:
+Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whole way — from the Blade tag to the runtime behaviour in the browser.
+
+- **🧩 One tag per field, zero boilerplate.** `<x-roro-text>`, `<x-roro-select>`, `<x-roro-file>`… 25+ components that render label, input, validation border, error message and required marker — consistently, in your theme.
+- **🔁 Repeatable groups that *just work*.** Nest **anything** (including searchable selects, multi-selects and file inputs), add/remove/reorder rows, and submit a clean `contacts[0][name]` array. Old input is restored after a failed validation with **zero extra wiring**. This is the feature other packages don't ship.
+- **🎛️ A real JavaScript API.** A chainable, **type-aware** facade: `roro('email').value('a@b.c').required().focus()`. The *same* `.value()` call reads/writes a text input, a select, a multi-select array, a checkbox boolean, a radio group or a list of file names. Most form packages ship **no** runtime API at all.
+- **🔎 Smart selects, server-rendered.** Searchable single & multi-selects with tags, option groups, and dynamic options — added client-side instantly or fetched from *your* JSON endpoint. Options render server-side, so there's no flash and no mandatory round-trip.
+- **🪄 Laravel-native by default.** Auto-repopulation from `old()`, per-field error messages pulled straight from `session('errors')`, CSRF, AJAX submit with server-side validation errors mapped back onto the right fields.
+- **🎨 Themeable.** Ships complete **Tailwind** and **Bootstrap** themes. Switch with one config line, or publish the Blade views and own the markup.
+- **📦 No build step for you.** The JS is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
+
+---
+
+## Quick start
+
+> **Requirements:** PHP `^8.0` · Laravel `9 → 13` · **jQuery** loaded on the page · Tailwind **or** Bootstrap CSS present (depending on the theme you pick).
+
+**1. Install**
 
 ```bash
 composer require roro/roroform
 ```
 
+**2. Publish the config** (optional but recommended)
+
 ```bash
 php artisan vendor:publish --tag=roro-config
 ```
 
----
+This creates `config/roroform.php`:
 
-## Basic Usage
+```php
+return [
+    // 'tailwind' (default) | 'bootstrap' | 'raw'
+    'theme' => 'tailwind',
 
-Here’s an example of a fully functional form using Roro Form components:
+    // Add the HTML `required` attribute on required fields by default.
+    'defaultJsValidation' => true,
+];
+```
+
+**3. Make sure jQuery is on the page**, then drop a form in any Blade view:
 
 ```blade
-<x-roro-form id="form-tutorial" :multipart="true">
-    <!-- Text Inputs -->
-    <x-roro-text id="test-error" value="John Doe" name="user[26][name]" label="First Name" placeholder="Enter your first name" :required="true"/>
-    <x-roro-text value="Jane Smith" name="user[29][name]" label="Full Name" placeholder="Enter your full name" :required="true"/>
-    <x-roro-text value="Michael Brown" name="user[1][name]" label="User Name" placeholder="Enter your username" :required="true"/>
-    <x-roro-text :disabled="true" value="Disabled Field" name="user[40][name]" label="Disabled Input"/>
-    <x-roro-text :readonly="true" value="Read Only Value" name="user[6][name]" label="Read Only"/>
+<x-roro-form action="/subscribe" :multipart="true" id="signup">
+    <x-roro-text  name="name"  label="Full name" :required="true"/>
+    <x-roro-email name="email" label="Email"     :required="true"/>
+    <x-roro-select name="country" label="Country"
+                   :options="['fr' => 'France', 'es' => 'Spain']"/>
 
-    <!-- Other Inputs -->
-    <x-roro-email value="john@example.com" name="email" label="Email" placeholder="Enter your email" :required="true"/>
-    <x-roro-checkbox name="newsletter" label="Subscribe to newsletter" position="right"/>
-    <x-roro-password value="secret123" name="password" label="Password" placeholder="Enter your password"/>
-    <x-roro-url value="https://example.com" name="url" label="Website"/>
-    <x-roro-tel value="+1234567890" name="tel" label="Phone"/>
+    <x-roro-button :ajax="true" form-id="signup">Send</x-roro-button>
+</x-roro-form>
+```
 
-    <!-- Date & Time -->
-    <x-roro-date name="date" value="2025-09-08" label="Date"/>
-    <x-roro-time name="time" value="14:30" label="Time"/>
-    <x-roro-datetime-local name="datetime-local" value="2025-09-08T14:30" label="Date & Time"/>
-    <x-roro-week name="week" value="2025-W36" label="Week"/>
-    <x-roro-month name="month" value="2025-09" label="Month"/>
+That's it. Label, validation, error display, CSRF and the AJAX submit are all handled — and the assets are injected automatically. No `<script src>`, no `@vite`, nothing else to add.
 
-    <!-- Number, Hidden, Range, Color -->
-    <x-roro-number name="age" value="30" label="Age"/>
-    <x-roro-hidden name="user_id" value="12345"/>
-    <x-roro-range name="satisfaction" value="75" list="satisfaction-list" step="5" label="Satisfaction Level"/>
-    <x-roro-color name="favorite_color" :hide-text-input="true" value="#00ff00" label="Favorite Color"/>
+---
 
-    <!-- Radio Group -->
-    <x-roro-radio-container label="Choose an Option" subtitle="You must select one" name="choice">
-        <x-roro-radio name="choice" value="option1" label="Option A"/>
-        <x-roro-radio name="choice" value="option2" label="Option B"/>
-        <x-roro-radio name="choice" value="option3" label="Option C"/>
-        <x-roro-radio name="choice" value="option4" label="Option D"/>
+## A real form in 30 seconds
+
+A taste of the breadth — every field below is a single tag:
+
+```blade
+<x-roro-form id="demo" :multipart="true">
+    {{-- Text-like inputs --}}
+    <x-roro-text     name="first_name" label="First name" :required="true"/>
+    <x-roro-email    name="email"      label="Email"      :required="true"/>
+    <x-roro-password name="password"   label="Password"/>
+    <x-roro-url      name="website"    label="Website"/>
+    <x-roro-tel      name="phone"      label="Phone"/>
+
+    {{-- Dates, numbers, ranges, colors --}}
+    <x-roro-date     name="dob"          label="Date of birth"/>
+    <x-roro-number   name="age"          label="Age"/>
+    <x-roro-range    name="satisfaction" label="Satisfaction" step="5"/>
+    <x-roro-color    name="color"        label="Favourite colour"/>
+
+    {{-- Choices --}}
+    <x-roro-checkbox name="newsletter" label="Subscribe" position="right"/>
+
+    <x-roro-radio-container name="plan" label="Plan">
+        <x-roro-radio name="plan" value="free" label="Free"/>
+        <x-roro-radio name="plan" value="pro"  label="Pro"/>
     </x-roro-radio-container>
 
-    <!-- Select and Multi-select -->
-    <x-roro-select id="select" name="select" :options="['Group 1'=>['a'=>'Option A','b'=>'Option B'],'Group 2'=>['c'=>'Option C']]" value="b" label="Select an option"/>
-    <x-roro-multi-select :values="['a','b']" id="select23" name="select23[]" :options="['Group 1'=>['a'=>'Option A','b'=>'Option B'],'Group 2'=>['c'=>'Option C']]" label="Select multiple options"/>
-    <x-roro-select id="select2" name="select2" :options="['fr'=>'France','en'=>'English','es'=>'Spain']" value="fr" label="Select a country"/>
+    {{-- Searchable selects --}}
+    <x-roro-select       name="country"   label="Country"
+                         :options="['Europe' => ['fr' => 'France', 'es' => 'Spain']]"/>
+    <x-roro-multi-select name="tags[]"    label="Tags" :values="['a']"
+                         :options="['a' => 'Alpha', 'b' => 'Beta']"/>
 
-    <!-- File Upload -->
-    <x-roro-file :multiple="true" id="file-upload" name="file[]" label="Upload Files" placeholder="Choose files" requirements-text="Accepted formats: jpg, gif"/>
+    {{-- File upload --}}
+    <x-roro-file name="docs[]" :multiple="true" label="Documents"
+                 requirements-text="Accepted: jpg, pdf"/>
 
-    <!-- Repeatable group (rows submit as contacts[0][name], contacts[1][name], ...) -->
-    <x-roro-repeatable name="contacts" label="Contacts" item-label="Contact" :min="1" :max="5" :reorder="true">
-        <x-roro-text name="name" label="Name" :required="true"/>
-        <x-roro-email name="email" label="Email"/>
-        <x-roro-select name="type" :options="['mobile'=>'Mobile','home'=>'Home']" label="Type"/>
+    {{-- Repeatable group → submits as contacts[0][name], contacts[1][name], … --}}
+    <x-roro-repeatable name="contacts" label="Contacts" item-label="Contact"
+                       :min="1" :max="5" :reorder="true">
+        <x-roro-text   name="name"  label="Name" :required="true"/>
+        <x-roro-email  name="email" label="Email"/>
+        <x-roro-select name="type"  label="Type"
+                       :options="['mobile' => 'Mobile', 'home' => 'Home']"/>
     </x-roro-repeatable>
 
-    <!-- Submit Button -->
-    <x-roro-button :ajax="true" form-id="form-tutorial">Send</x-roro-button>
+    <x-roro-button :ajax="true" form-id="demo">Submit</x-roro-button>
 </x-roro-form>
-
-<script>
-$(document).ready(function () {
-    // Handle AJAX success
-    $('#form-tutorial').on('roro:ajax:success', function (event, response) {
-        console.log('Form submitted successfully!', response);
-    });
-
-    // Show an error message on input change
-    $('#test-error').on('change', function () {
-        roroShowError('test-error', 'This is a test error message');
-    });
-
-    // Dynamically add options to selects
-    roroAddOption('select', 'Option D', 'd', 'Group 1');
-    roroAddOption('select2', 'Canada', 'ca', 'Group 2');
-
-    // Disable / readonly examples
-    roroDisableSelect('select2', true);
-    roroReadonlySelect('select', false);
-});
-
-</script>
-
 ```
-
----
-
-## Passing custom HTML attributes
-
-Every input forwards **arbitrary HTML attributes** (the Blade attribute bag) onto the
-underlying `<input>` / `<button>` element — no need to declare them in PHP. Handy for
-`data-*`, `aria-*`, `autocomplete`, `maxlength`, Alpine `x-` directives, etc.
-
-```blade
-<x-roro-text name="email" label="Email" data-testid="email" autocomplete="email" maxlength="120"/>
-```
-
-renders `... data-testid="email" autocomplete="email" maxlength="120">` on the input.
-Custom CSS classes still go through the dedicated `class` attribute and are merged with the
-component's own `roro-*` classes.
-
----
-
-## Dynamic select options
-
-Select options are rendered **server-side** — pass them and they're already in the dropdown,
-no JavaScript or network round-trip needed:
-
-```blade
-<x-roro-select name="country" :options="['fr' => 'France', 'es' => 'Spain']"/>
-<x-roro-select name="city" :options="['Europe' => ['par' => 'Paris', 'mad' => 'Madrid']]"/>
-```
-
-To add options **after** load:
 
 ```js
-// One option, instantly (client-side, no request). Optional 4th arg = category:
-roroAddOption('country', 'Germany', 'de', 'Europe');
+// Drive it from JavaScript — the same API, whatever the field type.
+roro.form('demo')
+    .fill({ first_name: 'Ada', country: 'fr', tags: ['a', 'b'] })
+    .onSuccess(res => console.log('Saved!', res));
 
-// Or fetch a batch from YOUR own JSON endpoint:
-//   GET /api/countries  ->  [{ "label": "Germany", "value": "de", "category": "Europe" }, ...]
-//   ("category" is optional)
-roroAddOptionsAjax('country', '/api/countries', { q: 'ge' });
+roro('contacts').addRow({ name: 'Grace', type: 'home' });
 ```
-
-`roroAddOptionsAjax` returns a promise resolved with the options it received.
 
 ---
 
-## Repeatable groups
+## 📚 Documentation
 
-`<x-roro-repeatable>` repeats **whatever you nest inside it** — one or many fields,
-of any type, including selects, multi-selects and file inputs. The user can add,
-remove and (optionally) reorder rows; everything submits as a clean array.
+Everything below is collapsed to keep this page scannable. Open the part you need.
+
+<details>
+<summary><strong>🧱 The component catalog — every input type</strong></summary>
+
+<br>
+
+Every component renders a full field: wrapper, optional label, the control, a validation border and an error slot — all themed. Names map onto Laravel's request payload exactly as you'd expect, including nested array names like `user[26][name]`.
+
+| Component | Renders | Notable props |
+|-----------|---------|---------------|
+| `<x-roro-text>` | `<input type=text>` | `value` `placeholder` `required` `disabled` `readonly` |
+| `<x-roro-email>` `<x-roro-password>` `<x-roro-url>` `<x-roro-tel>` | typed text inputs | same as text |
+| `<x-roro-number>` | `<input type=number>` | `min` `max` `step` |
+| `<x-roro-hidden>` | `<input type=hidden>` | `value` |
+| `<x-roro-date>` `<x-roro-time>` `<x-roro-datetime-local>` `<x-roro-week>` `<x-roro-month>` | native date/time pickers | `value` |
+| `<x-roro-range>` | slider | `min` `max` `step` `list` |
+| `<x-roro-color>` | colour picker | `hide-text-input` |
+| `<x-roro-checkbox>` | checkbox | `label` `position` (`left`/`right`) |
+| `<x-roro-radio-container>` + `<x-roro-radio>` | a radio group | `subtitle`; radios wrap responsively |
+| `<x-roro-select>` | searchable single select | `:options` `value` |
+| `<x-roro-multi-select>` | searchable multi-select with tags | `:options` `:values` (name ends with `[]`) |
+| `<x-roro-file>` | styled file input | `:multiple` `requirements-text` |
+| `<x-roro-repeatable>` | repeatable group of any of the above | see its section below |
+| `<x-roro-button>` | submit button | `:ajax` `form-id` `:ajax-errors` |
+| `<x-roro-form>` | the `<form>` + asset injection + overlay | `action` `method` `:multipart` `enctype` `:overlay` |
+
+**Shared field props** (from `InputMain`): `id` · `name` · `label` · `value` · `placeholder` · `:required` · `:disabled` · `:readonly` · `:hidden` · `class` · `wrapperClass` · `labelClass` · `tooltip` · `:enableError` · `:hasTopMargins` · `:populate` · `:disableJsValidation`.
+
+</details>
+
+<details>
+<summary><strong>🔎 Smart selects — searchable, grouped, dynamic</strong></summary>
+
+<br>
+
+Options are rendered **server-side**, then read and enhanced by JS. No flash of an empty dropdown, no mandatory network round-trip — and the basic value is present even before JS runs.
+
+```blade
+{{-- flat options --}}
+<x-roro-select name="country" :options="['fr' => 'France', 'es' => 'Spain']" value="fr"/>
+
+{{-- grouped options --}}
+<x-roro-select name="city" label="City"
+    :options="['Europe' => ['par' => 'Paris', 'mad' => 'Madrid'],
+               'Asia'   => ['tok' => 'Tokyo']]"/>
+
+{{-- multi-select with pre-selected tags (note the [] in the name) --}}
+<x-roro-multi-select name="tags[]" :values="['a', 'b']"
+    :options="['a' => 'Alpha', 'b' => 'Beta', 'c' => 'Gamma']"/>
+```
+
+**Add options after load** — instantly, or from your own endpoint:
+
+```js
+// One option, client-side, no request. Optional 4th arg = category.
+roro('country').addOption('Germany', 'de', 'Europe');
+
+// A batch:
+roro('country').addOptions([{ label: 'Italy', value: 'it', category: 'Europe' }]);
+
+// Or fetch from YOUR JSON endpoint:
+//   GET /api/countries?q=ge  ->  [{ "label": "Germany", "value": "de", "category": "Europe" }, ...]
+roro('country').addOptionsAjax('/api/countries', { q: 'ge' });   // returns a Promise
+
+roro('country').setOptions([...]);  // replace every option
+roro('country').removeOption('fr');
+roro('country').options();          // -> [{ label, value, category }, ...]
+roro('country').open();  roro('country').close();
+```
+
+Selects emit a real **`roro:change`** event — fired only on actual user/programmatic changes, never on initial population:
+
+```js
+roro('country').change(value => console.log('picked', value));
+```
+
+> The legacy globals (`roroAddOption`, `roroAddOptionsAjax`, `roroDisableSelect`, …) still work unchanged — the `roro()` facade is purely additive on top of them.
+
+</details>
+
+<details>
+<summary><strong>⭐ Repeatable groups — the headline feature</strong></summary>
+
+<br>
+
+`<x-roro-repeatable>` repeats **whatever you nest inside it** — one field or many, of any type, including searchable selects, multi-selects and file inputs. Users add, remove and (optionally) reorder rows; everything submits as a clean array.
 
 ```blade
 <x-roro-repeatable name="contacts" label="Contacts" :min="1" :max="5">
-    <x-roro-text name="name" label="Name" :required="true"/>
-    <x-roro-email name="email" label="Email"/>
-    <x-roro-select name="type" :options="['mobile' => 'Mobile', 'home' => 'Home']" label="Type"/>
+    <x-roro-text   name="name"  label="Name" :required="true"/>
+    <x-roro-email  name="email" label="Email"/>
+    <x-roro-select name="type"  :options="['mobile' => 'Mobile', 'home' => 'Home']" label="Type"/>
 </x-roro-repeatable>
 ```
 
-Inner field names are **relative to the row** (`name`, `email`, `type`) — the
-component prefixes them automatically, so the form posts:
+Inner field names are **relative to the row** (`name`, `email`, `type`) — the component prefixes them automatically, so the form posts:
 
 ```php
 $request->input('contacts');
@@ -175,25 +245,22 @@ $request->input('contacts');
 // ]
 ```
 
-### Prefilling (edit forms) & validation
+#### Prefilling (edit forms) & validation
 
-Pass an array of rows via `:rows` (or `:populate`). After a failed validation the
-re-submitted `old()` input is restored automatically — no extra wiring:
+Pass an array of rows via `:rows`. After a failed validation, the re-submitted `old()` input is restored automatically — **no extra wiring**:
 
 ```blade
 <x-roro-repeatable name="contacts" :rows="$user->contacts->toArray()">
-    <x-roro-text name="name" label="Name" :required="true"/>
+    <x-roro-text   name="name" label="Name" :required="true"/>
     <x-roro-select name="type" :options="$types"/>
 </x-roro-repeatable>
 ```
 
-`required` (and any HTML constraints) on the inner fields are enforced per row;
-the hidden blueprint is inert, so it never blocks submission.
+`required` (and any HTML constraint) on inner fields is enforced per row; the hidden blueprint is inert, so it never blocks submission.
 
-### Flat lists of scalars
+#### Flat lists of scalars
 
-For a plain list (`tags[]`) use the `index-token` (default `#`) and place it
-where the index should go:
+For a plain list (`tags[]`), use the `index-token` (default `#`) where the index should go:
 
 ```blade
 <x-roro-repeatable name="tags" index-token="#" :rows="['red', 'green']">
@@ -205,121 +272,94 @@ where the index should go:
 Or turn indexing off entirely with `:indexed="false"` and keep your own names
 (`<x-roro-text name="tags[]"/>` → posts the same flat `tags` array).
 
-### Attributes
+#### Attributes
 
 | Attribute | Default | Description |
 |-----------|---------|-------------|
 | `name` | — | Array prefix the rows submit under (e.g. `contacts`). |
 | `:rows` | `[]` | Initial dataset: an array of rows (objects, or scalars in token mode). |
 | `:min` | `1` | Minimum number of rows (can't remove below it). |
-| `:max` | `null` | Maximum number of rows (`null` = unlimited; Add disables at the cap). |
-| `reorder` | `false` | Reordering: `true`/`"buttons"` (▲▼), `"drag"` (drag handle, no dependency), or `"both"`. Drag is desktop-only — pair with buttons (`"both"`) for touch/keyboard. |
+| `:max` | `null` | Maximum number of rows (`null` = unlimited; *Add* disables at the cap). |
+| `:reorder` | `false` | Show up/down buttons to reorder rows. |
 | `item-label` | `null` | Per-row heading prefix, numbered automatically (`Contact 1`, `Contact 2`…). |
 | `key-field` | `null` | Inner field whose value uniquely identifies a row (e.g. `id`) — lets JS target a row by a **stable key** instead of position. |
 | `add-label` | `+ Add` | Text/markup of the add button. |
 | `remove-label` | `✕` | Text/markup of the per-row remove button. |
 | `index-token` | `''` | If set (e.g. `#`), replaces the token in inner names instead of auto-prefixing — use for flat lists or full control. |
-| `:indexed` | `true` | Set to `false` to leave inner names **verbatim** (no `prefix[i]`/token) — you control the naming (e.g. `name="aliases[]"` posts a flat `aliases` array). |
+| `:indexed` | `true` | Set to `false` to leave inner names **verbatim** (no `prefix[i]`/token) — you control the naming. |
 | `row-class` | `''` | Extra classes applied to every row. |
 
-Selects, multi-selects and file inputs added in new rows are wired up exactly like
-on page load (regenerated ids, registered instances) — nothing extra to call.
+Selects, multi-selects and file inputs added in new rows are wired up **exactly** like on page load (regenerated ids, registered instances) — nothing extra to call.
 
----
+</details>
 
-## JavaScript helpers
+<details>
+<summary><strong>🎛️ The <code>roro()</code> facade — one chainable, type-aware API</strong></summary>
 
-Roro Form ships a small, dependency-free (jQuery-based) facade so you can drive
-any field or form from JavaScript without caring about its underlying markup.
-Everything is **chainable** and **type-aware** — the same call works on a text
-input, a select, a checkbox or a file field.
+<br>
 
-### The `roro()` facade
+A small, jQuery-based facade so you can drive any field without caring about its underlying markup. Everything is **chainable** and **type-aware** — the same call works on a text input, a select, a checkbox or a file field.
 
 ```js
-roro('email')                 // -> handle, auto-detecting the field type
-    .value('john@example.com') // set (chainable) ; roro('email').value() to read
+roro('email')                  // -> handle, auto-detecting the field type
+    .value('john@example.com') // set (chainable); roro('email').value() to read
     .required()                // toggle the HTML required flag
     .focus();
 
-roro('age').disable();         // works on every input type
-roro('age').error('Too young'); roro('age').clearError();
-roro('newsletter').value(true);            // checkbox  -> boolean
-roro('satisfaction').value(80);            // range
-roro('file-upload').value();               // file      -> ['a.png', ...]
+roro('age').disable();                 // works on every input type
+roro('age').error('Too young');  roro('age').clearError();
+roro('newsletter').value(true);        // checkbox  -> boolean
+roro('satisfaction').value(80);        // range
+roro('file-upload').value();           // file      -> ['a.png', ...]
 ```
 
-`value()` is universal: it reads/writes the right thing per type — text for
-inputs, the selected option for a `select`, an **array** for a multi-select, the
-checked state for a checkbox, the checked value for a radio group, file names for
-a file input.
+`value()` is universal: text for inputs, the selected option for a `select`, an **array** for a multi-select, the checked state for a checkbox, the checked value for a radio group, file names for a file input.
 
-| Group   | Methods |
-|---------|---------|
-| Value   | `value(v?)` · `val(v?)` · `clear()` · `reset()` |
-| State   | `disable(b=true)` · `enable()` · `readonly(b=true)` · `editable()` · `required(b=true)` · `optional()` · `isDisabled()` · `isReadonly()` · `isRequired()` |
+| Group | Methods |
+|-------|---------|
+| Value | `value(v?)` · `val(v?)` · `clear()` · `reset()` |
+| State | `disable(b=true)` · `enable()` · `readonly(b=true)` · `editable()` · `required(b=true)` · `optional()` · `isDisabled()` · `isReadonly()` · `isRequired()` |
 | Display | `show()` · `hide()` · `toggle(b?)` · `isVisible()` · `label(t?)` · `placeholder(t?)` |
-| Error   | `error(msg)` · `clearError()` |
-| Events  | `on(ev, fn)` · `off(ev, fn)` · `trigger(ev)` · `change(fn)` · `input(fn)` · `click(fn)` · `focus()` · `blur()` |
-| Misc    | `type()` · `name()` · `exists()` · `$el()` · `$control()` · `$wrapper()` · `attr()` · `prop()` · `addClass()` / `removeClass()` / `toggleClass()` |
+| Error | `error(msg)` · `clearError()` |
+| Events | `on(ev, fn)` · `off(ev, fn)` · `trigger(ev)` · `change(fn)` · `input(fn)` · `click(fn)` · `focus()` · `blur()` |
+| Misc | `type()` · `name()` · `exists()` · `$el()` · `$control()` · `$wrapper()` · `attr()` · `prop()` · `addClass()` / `removeClass()` / `toggleClass()` |
 
-### Selects
+**Select-only methods** (no-op elsewhere): `addOption` · `addOptions` · `addOptionsAjax` · `setOptions` · `removeOption` · `clearOptions` · `options` · `open` · `close`.
 
-The handle exposes the full select API and a real **`change` event** (fired only
-on actual user/programmatic changes, never on page load):
-
-```js
-roro('country')
-    .addOption('France', 'fr', 'Europe')          // one option (client-side)
-    .addOptions([{ label: 'Spain', value: 'es' }])// batch
-    .value('fr')                                  // select it
-    .change(value => console.log('picked', value));
-
-roro('country').addOptionsAjax('/api/countries', { q: 'fr' }); // returns a promise
-roro('country').setOptions([...]);   // replace every option
-roro('country').removeOption('fr');
-roro('country').options();           // -> [{label, value, category}, ...]
-roro('country').open();  roro('country').close();
-```
-
-### Repeatables
+#### Repeatables from JS
 
 ```js
-roro('contacts').addRow();                                   // append an empty row
-roro('contacts').addRow({ name: 'Ada', type: 'home' });      // append a prefilled row
-roro('contacts').removeRow(0);                               // remove the first row
+roro('contacts').addRow();                                  // append empty row
+roro('contacts').addRow({ name: 'Ada', type: 'home' });     // append prefilled row
+roro('contacts').removeRow(0);                              // remove first row
 roro('contacts').rowsCount();                               // -> 2
 roro('contacts').value();                                   // -> [{name, email, type}, ...]
 roro('contacts').value([{ name: 'Ada' }, { name: 'Bob' }]); // replace every row
 roro('contacts').change(rows => console.log('changed', rows));
 ```
 
-Flat one-liners: `roroAddRow('contacts', data)` · `roroRemoveRow('contacts', 0)` ·
-`roroRows('contacts')` · `roroRowsCount('contacts')` · `roroClearRows('contacts')`.
-
-Need to act on **one specific row**? `roro('contacts').row(target)` returns a row
-handle. Prefer identifying rows by a **stable key** rather than by position — add
-`key-field="id"` to the component (with an `id` field, often hidden, per row):
+Need one **specific row**? Prefer a **stable key** over a position — add `key-field="id"` to the component (with an `id` field, often hidden, per row):
 
 ```js
-const row = roro('contacts').row(12);         // the row whose id is 12 — stable across reorder/remove
-row.field('email').value('a@b.c');            // drive one field of that row
-row.field('type').disable();                  // works on nested selects too
-row.lockRemoval();                            // disable its remove button (front-end lock)
-row.disable();                                // disable every field in the row
-row.value({ name: 'Ada', type: 'home' });     // set the whole row; row.value() to read it
+const row = roro('contacts').row(12);    // the row whose id is 12 — stable across reorder/remove
+row.field('email').value('a@b.c');       // drive one field of that row
+row.field('type').disable();             // works on nested selects too
+row.lockRemoval();                       // disable its remove button (front-end lock)
+row.disable();                           // disable every field in the row
+row.value({ name: 'Ada', type: 'home' }); // set the whole row; row.value() to read it
 row.moveUp();  row.moveDown();  row.remove();  row.key();  row.index();
 
-roro('contacts').rowAt(0);                     // by position, explicitly
-roro('contacts').rowWhere(r => r.email === 'a@b.c'); // by predicate (row data)
-roro('contacts').rowHandles();                 // every row as a handle
+roro('contacts').rowAt(0);                            // by position, explicitly
+roro('contacts').rowWhere(r => r.email === 'a@b.c');  // by predicate (row data)
+roro('contacts').rowHandles();                        // every row as a handle
 ```
 
-Without a `key-field`, `row(i)` falls back to the position. Flat helpers:
-`roroRow('contacts', 12)` · `roroRowField('contacts', 12, 'email')` ·
-`roroLockRow('contacts', 12)`.
+</details>
 
-### The `roro.form()` facade
+<details>
+<summary><strong>📨 The <code>roro.form()</code> facade — drive the whole form</strong></summary>
+
+<br>
 
 ```js
 const form = roro.form('signup');
@@ -337,43 +377,108 @@ form.reset();    form.overlay(true);
 form.field('email').focus();       // resolve a field by name **or** id
 ```
 
-`fill()` matches keys against field **names** first (so it maps straight onto
-your server payload / `old()` data) and falls back to element **ids** for
-convenience.
+`fill()` matches keys against field **names** first (so it maps straight onto your server payload / `old()` data) and falls back to element **ids**. It even understands repeatable groups and custom selects, not just native inputs.
 
-### One-liner helpers
+</details>
 
-Every facade method also has a flat `window.roro*` shortcut, handy for quick
-inline calls:
+<details>
+<summary><strong>🪄 Laravel-native validation, <code>old()</code> &amp; AJAX</strong></summary>
+
+<br>
+
+RoroForm is wired into the framework, so the usual controller flow needs no front-end glue:
+
+- **Repopulation.** Every field reads `old()` automatically after a failed validation — including nested array names and repeatable rows.
+- **Error display.** Each field pulls its first message from `session('errors')` and shows it inline, with a red border on the control.
+- **CSRF.** `<x-roro-form>` injects `@csrf` for `POST`/`PUT`/`PATCH`/`DELETE`.
+- **AJAX submit.** `<x-roro-button :ajax="true">` posts via `FormData` (file uploads included), shows a loading overlay, and fires events:
 
 ```js
-roroValue('email', 'a@b.c');     roroValue('email');      // get/set
-roroDisable('age');  roroEnable('age');  roroReadonly('age');  roroRequired('age');
-roroShow('age');     roroHide('age');    roroFocus('email');  roroClearError('age');
-roroOnChange('country', v => ...);
-roroAddOptions('country', [...]);  roroSetOptions('country', [...]);  roroClearOptions('country');
-roroRemoveOption('country', 'fr'); roroOptions('country');
-
-roroFormData('signup');          roroFillForm('signup', data);
-roroSubmit('signup');            roroValidateForm('signup');   roroResetForm('signup');
-roroFormErrors('signup', errs);  roroClearFormErrors('signup');
-roroOnSuccess('signup', fn);     roroOnError('signup', fn);
+$('#signup').on('roro:ajax:success', (e, response) => { /* ... */ });
+$('#signup').on('roro:ajax:error',   (e, xhr)      => { /* ... */ });
 ```
 
-> All the previous globals (`roroAddOption`, `roroShowError`, `roroShowOverlay`,
-> `roroDisableSelect`, …) keep working unchanged — the facade is purely additive.
+Add `:ajax-errors="true"` to the button and a `422` response's `errors` payload is mapped **straight back onto the matching fields** — no manual error handling:
 
----
+```php
+// Your controller just validates as usual.
+$request->validate([
+    'email'            => 'required|email',
+    'contacts.*.name'  => 'required',
+]);
+```
 
-## Publishing Assets
+</details>
 
-After installing **Roro Form**, you may want to customize its views or configuration.
+<details>
+<summary><strong>🎨 Theming &amp; publishing the views</strong></summary>
 
-### Publish Views
+<br>
 
-To publish the Blade views for customization:
+Pick a theme once in `config/roroform.php`:
+
+```php
+'theme' => 'tailwind', // or 'bootstrap'
+```
+
+Both **Tailwind** and **Bootstrap** themes ship complete and mirror each other component-for-component. (A framework-free `raw` theme is scaffolded for full custom styling but not yet complete — use Tailwind or Bootstrap for production.)
+
+Need to own the markup? Publish the Blade views and edit them in place:
 
 ```bash
 php artisan vendor:publish --tag=roro-views
+# -> resources/views/vendor/roroform/...
+```
 
+</details>
 
+<details>
+<summary><strong>🔧 Arbitrary HTML attributes pass-through</strong></summary>
+
+<br>
+
+Every input forwards **arbitrary HTML attributes** (the Blade attribute bag) onto the underlying element — no need to declare them in PHP. Great for `data-*`, `aria-*`, `autocomplete`, `maxlength`, Alpine `x-` directives, etc.
+
+```blade
+<x-roro-text name="email" label="Email"
+    data-testid="email" autocomplete="email" maxlength="120"/>
+```
+
+renders `... data-testid="email" autocomplete="email" maxlength="120">` on the `<input>`. Custom CSS classes go through the dedicated `class` attribute and are merged with the component's own `roro-*` classes.
+
+</details>
+
+<details>
+<summary><strong>🏗️ How it works under the hood</strong></summary>
+
+<br>
+
+- **Component hierarchy.** `ComponentMain` → `InputMain` → each leaf (`Text`, `Select`, `Repeatable`, …). The base classes resolve the theme, repopulate from `old()`, and compute the error message; leaves only declare their props and view.
+- **Theme = a view directory.** A component renders `roroform::components.{theme}.{view}`. Themes are interchangeable sets of Blade views over the same PHP.
+- **Zero-build asset injection.** The JS lives as individually minified files in `resources/js/dist/`. `<x-roro-form>` injects them **once per page** via Blade stacks — your app needs no bundler. (Edit the sources under `resources/js/` and run `npm run build` only if you're hacking on the package itself.)
+- **Selects & repeatables are progressive enhancement.** Options and the row blueprint are rendered server-side; JS reads the existing DOM, clones it for new rows/options, regenerates ids, reindexes names (`prefix[i][field]`), and registers nested instances — so a cloned row behaves identically to one rendered on load.
+
+</details>
+
+---
+
+## Requirements
+
+| | |
+|---|---|
+| **PHP** | `^8.0` |
+| **Laravel** | `9`, `10`, `11`, `12`, `13` |
+| **jQuery** | required on the page (the runtime is jQuery-based) |
+| **CSS** | Tailwind **or** Bootstrap, matching your `theme` config |
+
+## Installation recap
+
+```bash
+composer require roro/roroform
+php artisan vendor:publish --tag=roro-config   # config/roroform.php
+php artisan vendor:publish --tag=roro-views    # (optional) own the Blade markup
+```
+
+## License
+
+[Apache-2.0](LICENSE).
