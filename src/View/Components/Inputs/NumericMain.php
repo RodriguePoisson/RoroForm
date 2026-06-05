@@ -22,9 +22,9 @@ abstract class NumericMain extends InputMain
         string $name = '',
         bool $enableError = true,
         ?string $tooltip = null,
-        public string $min = '',
-        public string $max = '',
-        public string $step = '1',
+        public ?string $min = null,
+        public ?string $max = null,
+        public ?string $step = null,
         public ?string $list = null,
     ) {
         parent::__construct(

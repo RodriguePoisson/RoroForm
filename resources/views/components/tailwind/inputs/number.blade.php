@@ -25,9 +25,9 @@
                 readonly
             @endif
             {{ ($required && !$disableJsValidation)? 'required' : '' }}
-            min="{{ $min ?? 0 }}"
-            max="{{ $max ?? 100 }}"
-            step="{{ $step ?? 1 }}"
+            @if(!is_null($min)) min="{{ $min }}" @endif
+            @if(!is_null($max)) max="{{ $max }}" @endif
+            @if(!is_null($step)) step="{{ $step }}" @endif
             {{ $attributes->class([
                 'roro-input roro-input-number block w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500',
                 $class,

@@ -8,6 +8,23 @@
             "RoroForm\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "RoroForm\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0",
+        "pestphp/pest": "^3.0"
+    },
+    "scripts": {
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [

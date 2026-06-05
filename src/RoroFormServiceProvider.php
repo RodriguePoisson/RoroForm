@@ -94,6 +94,9 @@ class RoroFormServiceProvider extends ServiceProvider
 
     public function register()
     {
-        // Enregistrement bindings, singletons...
+        // Provide the package config defaults so the components work out of the
+        // box: without this, config('roroform.theme') is null until the app
+        // publishes the config, and ComponentMain would reject the null theme.
+        $this->mergeConfigFrom(__DIR__.'/../config/roroform.php', 'roroform');
     }
 }

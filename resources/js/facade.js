@@ -129,7 +129,12 @@
                 return;
             }
 
-            $els.val(value).trigger('change');
+            if (Array.isArray(value) && $els.length > 1) {
+                $els.each(function (i) { $(this).val(i < value.length ? value[i] : ''); });
+            } else {
+                $els.val(value);
+            }
+            $els.trigger('change');
         });
     }
 

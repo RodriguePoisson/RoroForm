@@ -4,9 +4,14 @@
     "private": true,
     "scripts": {
         "build": "node build.mjs",
-        "watch": "node build.mjs --watch"
+        "watch": "node build.mjs --watch",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "devDependencies": {
-        "esbuild": "^0.24.0"
+        "esbuild": "^0.24.0",
+        "jquery": "^3.7.1",
+        "jsdom": "^25.0.1",
+        "vitest": "^3.0.0"
     }
 }

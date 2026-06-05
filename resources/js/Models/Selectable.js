@@ -400,7 +400,10 @@ class MultiSelect extends Selectable {
 
     filterOptions(filterText = '') {
         const needles = [filterText.toLowerCase().trim()];
-        this.elt.find('.caret-zone').each(function () {
+        // Only the live caret-zones inside the text input carry typed text; the
+        // .roro-select-templates copy is empty and would inject an '' needle that
+        // matches every option.
+        this.textInput.find('.caret-zone').each(function () {
             needles.push($(this).text().toLowerCase().trim());
         });
         this.optionsFiltered = this.options.filter(option =>

@@ -25,9 +25,9 @@
                     readonly
                 @endif
                 {{ ($required && !$disableJsValidation)? 'required' : '' }}
-                min="{{ $min ?? 0 }}"
-                max="{{ $max ?? 100 }}"
-                step="{{$step}}"
+                @if(!is_null($min)) min="{{ $min }}" @endif
+                @if(!is_null($max)) max="{{ $max }}" @endif
+                @if(!is_null($step)) step="{{ $step }}" @endif
                 {{ $attributes->class([
                     'roro-input roro-input-range form-range',
                     $class,
