@@ -9,6 +9,9 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml"><img src="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
+  <img src="https://img.shields.io/badge/tests-818%20passing-3fb950" alt="818 tests passing">
+  <img src="https://img.shields.io/badge/JS-zero%20dependencies-f7df1e?logo=javascript&logoColor=black" alt="Zero JS dependencies">
   <img src="https://img.shields.io/badge/PHP-%5E8.0-777BB4?logo=php&logoColor=white" alt="PHP ^8.0">
   <img src="https://img.shields.io/badge/Laravel-9%20%E2%86%92%2013-FF2D20?logo=laravel&logoColor=white" alt="Laravel 9 to 13">
   <img src="https://img.shields.io/badge/themes-Tailwind%20%7C%20Bootstrap-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind | Bootstrap">
@@ -486,6 +489,13 @@ composer require roro/roroform
 php artisan vendor:publish --tag=roro-config   # config/roroform.php
 php artisan vendor:publish --tag=roro-views    # (optional) own the Blade markup
 ```
+
+## Upgrading
+
+**Coming from the 1.x (jQuery) runtime?** 2.0 drops jQuery for dependency-free
+vanilla JS. The everyday facade is unchanged; a few front-end event/return
+contracts changed — see the [CHANGELOG](CHANGELOG.md) for the short migration
+guide.
 
 ## License
 

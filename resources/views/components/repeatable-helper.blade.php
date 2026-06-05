@@ -1,6 +1,6 @@
 @once
     @push('roro-select-scripts')
-        <script>
+        <script{!! $cspNonce ? ' nonce="'.e($cspNonce).'"' : '' !!}>
             {!! file_get_contents(realpath($getJsPath() . 'RoroRepeatable.min.js')) !!}
             {!! file_get_contents(realpath($getJsPath() . 'repeatable.min.js')) !!}
         </script>
@@ -9,7 +9,7 @@
     {{-- Theme-agnostic cohesion the utility classes can't express cross-theme:
          tighten the inner fields so a row reads as one unit, and draw a divider
          between rows so the whole group reads as a single input. --}}
-    <style>
+    <style{!! $cspNonce ? ' nonce="'.e($cspNonce).'"' : '' !!}>
         .roro-repeatable-row-content > * { margin-top: .65rem !important; }
         .roro-repeatable-row-content > *:first-child { margin-top: 0 !important; }
         .roro-repeatable-rows > .roro-repeatable-row + .roro-repeatable-row { border-top: 1px solid rgba(0, 0, 0, .08); }

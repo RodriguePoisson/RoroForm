@@ -1,6 +1,6 @@
 @once
     @push('roro-global-scripts')
-        <script>
+        <script{!! $cspNonce ? ' nonce="'.e($cspNonce).'"' : '' !!}>
             {!! file_get_contents(realpath($getJsPath() . 'dom.min.js')) !!}
             {!! file_get_contents(realpath($getJsPath() . 'RoroElement.min.js')) !!}
             {!! file_get_contents(realpath($getJsPath() . 'Input.min.js')) !!}
