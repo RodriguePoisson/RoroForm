@@ -4,36 +4,10 @@ namespace RoroForm\View\Components\Inputs;
 
 abstract class CheckableMain extends InputMain
 {
-    public bool $checked = false;
-
-    /**
-     * Create a new component instance.
-     *
-     * @param  string|null  $id
-     * @param  string  $class
-     * @param  bool  $hasTopMargins
-     * @param  string|null  $label
-     * @param  string  $labelClass
-     * @param  string  $wrapperClass
-     * @param  string  $name
-     * @param  string  $value
-     * @param  bool  $required
-     * @param  bool  $hidden
-     * @param  bool  $disabled
-     * @param  bool  $readonly
-     * @param  array  $populate
-     * @param  bool  $disableJsValidation
-     * @param  string  $placeholder
-     * @param  bool  $enableError
-     * @param string|null $tooltip
-     * @param  bool  $checked
-     */
-
     public function __construct(
         ?string $id = null,
         string $class = '',
-        bool $hasTopMargins = true
-        ,
+        bool $hasTopMargins = true,
         ?string $label = null,
         string $labelClass = '',
         string $wrapperClass = '',
@@ -42,40 +16,38 @@ abstract class CheckableMain extends InputMain
         bool $disabled = false,
         bool $readonly = false,
         array $populate = [],
-        bool $disableJsValidation = null,
-        string $value = '',
+        ?bool $disableJsValidation = null,
+        string $value = '1',
         string $placeholder = '',
         string $name = '',
         bool $enableError = true,
         ?string $tooltip = null,
-        bool $checked = false,
+        public bool $checked = false,
     ) {
-        parent::__construct($id, $class, $hasTopMargins, $label, $labelClass, $wrapperClass, $required, $hidden,
-            $disabled, $readonly, $populate, $disableJsValidation, $value, $placeholder, $name, $enableError,$tooltip,true);
-
-        $this->checked = $checked;
-        $this->populateValue();
+        parent::__construct(
+            id: $id,
+            class: $class,
+            hasTopMargins: $hasTopMargins,
+            label: $label,
+            labelClass: $labelClass,
+            wrapperClass: $wrapperClass,
+            required: $required,
+            hidden: $hidden,
+            disabled: $disabled,
+            readonly: $readonly,
+            populate: $populate,
+            disableJsValidation: $disableJsValidation,
+            value: $value,
+            placeholder: $placeholder,
+            name: $name,
+            enableError: $enableError,
+            tooltip: $tooltip,
+        );
     }
 
-    private function populateValue(): void
+    /** Un champ cochable est coche des qu'une valeur non vide est repeuplee. */
+    protected function onPopulated(string $item): void
     {
-        $key = $this->normalizeOldName($this->name);
-
-        $oldValue = old($key, []);
-        if (!is_array($oldValue)) {
-            $oldValue = [$oldValue];
-        }
-
-        $this->populate = array_merge($oldValue, $this->populate);
-
-        foreach ($this->populate as $item) {
-            if ($item) {
-                $this->value = $item;
-                $this->checked = true;
-                break;
-            }
-        }
+        $this->checked = true;
     }
-
-    abstract public function render();
 }

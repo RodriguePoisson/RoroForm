@@ -188,7 +188,9 @@ class Selectable extends Input {
      * ---------- States ----------
      */
     isDisabled() {
-        return this.elt.data('disabled');
+        // La cle data est posee par disable()/handleDisableReadonly() et par le
+        // blade (data-disable) : on lit donc 'disable' (et non 'disabled').
+        return this.elt.data('disable');
     }
 
     isReadonly() {
@@ -226,14 +228,17 @@ class Selectable extends Input {
      * ---------- Dropdown ----------
      */
     get selectWrapper() {
-        return $('#' + this.id);
+        // Memoise : le wrapper et le dropdown sont des elements stables (seules
+        // leurs options internes changent), inutile de refaire un $() a chaque acces.
+        return (this._selectWrapper ??= $('#' + this.id));
     }
 
     get dropdown() {
-        return this.selectWrapper.find('.roro-select-dropdown');
+        return (this._dropdown ??= this.selectWrapper.find('.roro-select-dropdown'));
     }
 
-    showDropDown() {
+    showDropDown(show) {
+        if (show !== undefined) this.selectWrapper.data('show', show);
         if (!this.selectWrapper.length) throw new Error(`No wrapper found for Selectable with id ${this.id}`);
         if (!this.dropdown.length) throw new Error(`No dropdown found for Selectable with id ${this.id}`);
         this.selectWrapper.data('show') ? this.dropdown.slideDown() : this.dropdown.slideUp();
@@ -284,6 +289,20 @@ class Selectable extends Input {
     addTextInputHtml(select,elt){
         elt.appendTo(select.elt.find('.roro-select-text-input'))
     }
+
+    // Cache la coche + l'overlay de TOUTES les options (etat "rien de selectionne").
+    resetOptionMarkers() {
+        this.options.forEach(option => {
+            option.elt.find('.roro-select-option-check').hide();
+            option.elt.find('.roro-select-option-overlay').hide();
+        });
+    }
+
+    // Affiche la coche + l'overlay d'une option (etat "selectionnee").
+    markOption(option) {
+        option.elt.find('.roro-select-option-check').show();
+        option.elt.find('.roro-select-option-overlay').show();
+    }
 }
 
 /**
@@ -305,42 +324,40 @@ class Select extends Selectable {
     }
 
     actualize() {
-        this.options.forEach(option => {
-            option.elt.find('.roro-select-option-check').hide();
-            option.elt.find('.roro-select-option-overlay').hide();
-        });
+        this.resetOptionMarkers();
         if (this.optionSelected) {
             this.setTextInputValue(this.optionSelected.label);
-            this.optionSelected.elt.find('.roro-select-option-check').show();
-            this.optionSelected.elt.find('.roro-select-option-overlay').show();
+            this.markOption(this.optionSelected);
         } else {
             this.setTextInputValue('');
         }
     }
 
+    // Etat "rien de selectionne" (partage entre le cas null et le cas introuvable).
+    resetSelection() {
+        this.optionSelected = null;
+        this.value = null;
+        this.setHiddenValue('');
+        this.setTextInputValue('');
+        this.actualize();
+    }
+
     setOptionSelected(optionValue) {
         if (optionValue === null || optionValue === undefined) {
-            this.optionSelected = null;
-            this.value = null;
-            this.setHiddenValue('');
-            this.setTextInputValue('');
-            this.actualize();
+            this.resetSelection();
             return;
         }
 
         const found = this.options.find(option => option.value == optionValue);
-        if (found) {
-            this.optionSelected = found;
-            this.value = optionValue;
-            this.setHiddenValue(optionValue);
-            this.actualize();
-        } else {
-            this.optionSelected = null;
-            this.value = null;
-            this.setHiddenValue('');
-            this.setTextInputValue('');
-            this.actualize();
+        if (!found) {
+            this.resetSelection();
+            return;
         }
+
+        this.optionSelected = found;
+        this.value = optionValue;
+        this.setHiddenValue(optionValue);
+        this.actualize();
     }
 
     handleOptionClick(option) {
@@ -356,7 +373,10 @@ class Select extends Selectable {
         if ($h.length) {
             $h.val(value);
         } else {
-            this.elt.append(`<input type="hidden" class="roro-select-hidden" name="${this.id}" value="${value}">`);
+            // Construction via jQuery (echappement automatique de name/value).
+            $('<input>', { type: 'hidden', class: 'roro-select-hidden', name: this.id })
+                .val(value)
+                .appendTo(this.elt);
         }
     }
 
@@ -393,30 +413,27 @@ class MultiSelect extends Selectable {
         let self = this;
         self.listTag = [];
 
-        this.options.forEach(option => {
-            option.elt.find('.roro-select-option-check').hide();
-            option.elt.find('.roro-select-option-overlay').hide();
-        });
+        self.resetOptionMarkers();
 
-        new RoroElement('multi-select-text-tag', null, '', {}, true).ready.then(function(){
-            const labels = self.options
-                .filter(opt => self.values.includes(opt.value))
-                .map(opt => ({ label: opt.label, value: opt.value,option:opt }));
-            self.elt.find('.roro-select-text-input').html('');
-            labels.forEach(label => {
-                let multiSelectTextTag = new RoroElement('multi-select-text-tag', null, '', {}, true);
+        // (Avant : une instance RoroElement 'multi-select-text-tag' jetable etait
+        // creee juste pour attendre son .ready -> 1 requete AJAX gaspillee. Le
+        // template est de toute facon mis en cache (useCache) des le 1er tag du loop.)
+        const labels = self.options
+            .filter(opt => self.values.includes(opt.value))
+            .map(opt => ({ label: opt.label, value: opt.value, option: opt }));
+        self.elt.find('.roro-select-text-input').html('');
+        labels.forEach(label => {
+            let multiSelectTextTag = new RoroElement('multi-select-text-tag', null, '', {}, true);
 
-                multiSelectTextTag.ready.then(function(){
-                    multiSelectTextTag.elt.find('.roro-multi-select-text-tag-text').text(label.label);
-                    multiSelectTextTag.elt.data('value',label.value);
-                    self.addTextInputHtml(self,multiSelectTextTag.elt);
-                    self.listTag.push(multiSelectTextTag);
-                    label.option.elt.find('.roro-select-option-check').show();
-                    label.option.elt.find('.roro-select-option-overlay').show();
-                    multiSelectTextTag.elt.find('.roro-multi-select-text-tag-clear-button').on('click',function(){
-                        self.toggleOption(label.value);
-                    });
-                })
+            multiSelectTextTag.ready.then(function(){
+                multiSelectTextTag.elt.find('.roro-multi-select-text-tag-text').text(label.label);
+                multiSelectTextTag.elt.data('value',label.value);
+                self.addTextInputHtml(self,multiSelectTextTag.elt);
+                self.listTag.push(multiSelectTextTag);
+                self.markOption(label.option);
+                multiSelectTextTag.elt.find('.roro-multi-select-text-tag-clear-button').on('click',function(){
+                    self.toggleOption(label.value);
+                });
             })
         })
     }
@@ -447,10 +464,12 @@ class MultiSelect extends Selectable {
         this.elt.find('.roro-multi-select-hidden').remove();
         if (!Array.isArray(values)) values = [];
         values.forEach(v => {
-            this.elt.append(
-                `<input ${this.isDisabled() ? 'disabled' : ''} ${this.isReadonly() ? 'readonly' : ''} type="hidden" class="roro-multi-select-hidden test-roro" value="${v}" name="${this.name}">`
-            );
-
+            // Construction via jQuery (echappement automatique) au lieu d'une
+            // concatenation de chaine HTML. Classe residuelle 'test-roro' retiree.
+            const $input = $('<input>', { type: 'hidden', class: 'roro-multi-select-hidden', name: this.name }).val(v);
+            if (this.isDisabled()) $input.attr('disabled', true);
+            if (this.isReadonly()) $input.attr('readonly', true);
+            $input.appendTo(this.elt);
         });
     }
 

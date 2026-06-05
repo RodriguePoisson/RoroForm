@@ -1,0 +1,12 @@
+{
+    "name": "roroform",
+    "description": "Build des assets JS de RoroForm (minification vers resources/js/dist).",
+    "private": true,
+    "scripts": {
+        "build": "node build.mjs",
+        "watch": "node build.mjs --watch"
+    },
+    "devDependencies": {
+        "esbuild": "^0.24.0"
+    }
+}

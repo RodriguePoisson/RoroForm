@@ -1,7 +1,6 @@
 window.roroShowError = function(inputId, message = '', show = true) {
     let inputWrapper = roroGetWrapper(inputId);
     if (!inputWrapper.length) return;
-    let input = $('#' + inputId);
 
     let error = inputWrapper.find('.roro-input-error-container');
     let errorMessage = error.find('.roro-input-error-message');
@@ -41,8 +40,10 @@ window.roroGetWrapper = function(inputId) {
     let input = $(`#${inputId}`);
     let wrapper = $(`#roro-wrapper-${inputId}`);
 
+    // Un radio n'a pas son propre conteneur d'erreur : on remonte a SON
+    // radio-container parent (et non a TOUS les .roro-wrapper-radio-container).
     if (input.hasClass('roro-input-radio')) {
-        wrapper = $('.roro-wrapper-radio-container');
+        wrapper = input.closest('.roro-wrapper-radio-container');
     }
 
     return wrapper;

@@ -32,7 +32,9 @@
                 @if($disabled) disabled @endif
                 @if($readonly) readonly @endif
                 {{ ($required && !$disableJsValidation)? 'required' : '' }}
-                class="roro-input roro-input-file file-input absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                {{ $attributes->class([
+                    'roro-input roro-input-file file-input absolute inset-0 w-full h-full opacity-0 cursor-pointer',
+                ]) }}
                 data-max-size="{{ $maxSize }}"
             >
         </div>

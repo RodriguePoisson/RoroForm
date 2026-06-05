@@ -24,15 +24,12 @@
             <div class="relative">
                 <div
                     data-id="{{$id}}"
-                    type="text"
-                    rows="1"
                     contenteditable="true"
                     placeholder="{{ $placeholder }}"
-                    class="roro-select-text-input w-full border py-2 pl-3 pr-10
-                           focus:outline-none flex gap-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-                           text-gray-800 placeholder-gray-400
-                           sm:text-sm md:text-base lg:text-lg
-                           transition-colors duration-200 {{$class}}"
+                    {{ $attributes->class([
+                        'roro-select-text-input w-full border py-2 pl-3 pr-10 focus:outline-none flex gap-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 placeholder-gray-400 sm:text-sm md:text-base lg:text-lg transition-colors duration-200',
+                        $class,
+                    ]) }}
                     {{ ($required && !$disableJsValidation)? 'required' : '' }}
                     @if($disabled) disabled @endif
                     @if($readonly) readonly @endif

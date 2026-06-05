@@ -20,7 +20,10 @@ class RoroFile extends RoroElement {
     }
 
     registerEvents() {
-        if (this.filenameLabelTemplate) {
+        // ?.length : registerEvents() est d'abord appele par la base (avant init(),
+        // donc filenameLabelTemplate est undefined) ; on ne cable qu'apres init,
+        // et seulement si le template existe reellement dans le DOM.
+        if (this.filenameLabelTemplate?.length) {
             let self = this;
 
             self.elt.on('change', function () {

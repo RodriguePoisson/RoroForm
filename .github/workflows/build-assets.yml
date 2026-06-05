@@ -1,0 +1,33 @@
+name: Build assets
+
+# Garde-fou anti-desync : a chaque push / PR, on rebuild dist/ depuis les sources
+# et on echoue si le resultat differe de ce qui est commite. Impossible donc de
+# laisser trainer un dist/ perime (la cause du bug historique : console.log en prod,
+# classe radio divergente, fonctions dupliquees).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Verifie que resources/js/dist est a jour
+        run: |
+          if ! git diff --quiet -- resources/js/dist; then
+            echo "::error::resources/js/dist n'est pas synchrone avec les sources JS. Lance 'npm run build' puis commit le resultat."
+            git diff --stat -- resources/js/dist
+            exit 1
+          fi
+          echo "dist/ est a jour."

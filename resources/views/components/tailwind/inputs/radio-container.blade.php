@@ -1,5 +1,9 @@
 <fieldset
-    class="roro-wrapper-radio-container @if($hasTopMargins) mt-6 @endif{{$fieldsetClass}}">
+    {{ $attributes->class([
+        'roro-wrapper-radio-container',
+        'mt-6' => $hasTopMargins,
+        $fieldsetClass,
+    ]) }}>
     <x-roro-border-error :hidden="!$error || !$enableError" padding="p-4">
         <legend class="{{$labelClass}}">{{$label}}</legend>
         @if($subtitle)

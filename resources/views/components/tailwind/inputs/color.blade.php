@@ -21,7 +21,9 @@
                 {{ $disabled ? 'disabled' : '' }}
                 {{ $readonly ? 'readonly' : '' }}
                 {{ ($required && !$disableJsValidation) ? 'required' : '' }}
-                class="roro-input roro-input-color sr-only peer"
+                {{ $attributes->class([
+                    'roro-input roro-input-color sr-only peer',
+                ]) }}
                 onchange="this.nextElementSibling.style.backgroundColor=this.value; this.nextElementSibling.nextElementSibling.value=this.value;"
             >
 

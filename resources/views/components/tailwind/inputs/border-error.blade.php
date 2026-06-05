@@ -1,7 +1,7 @@
 <div id="{{$id}}"
-     data-class="roro-border-error border border-red-500 {{{$padding}}} {{$wrapperClass}}"
+     data-class="roro-border-error border border-red-500 {{ $padding }} {{$wrapperClass}}"
      data-show="{{!$hidden}}"
-     class="roro-border-error">
+     {{ $attributes->class(['roro-border-error']) }}>
     <div class="w-full">
         {{$slot}}
     </div>

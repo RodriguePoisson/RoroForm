@@ -101,6 +101,22 @@ $(document).ready(function () {
 
 ---
 
+## Passing custom HTML attributes
+
+Every input forwards **arbitrary HTML attributes** (the Blade attribute bag) onto the
+underlying `<input>` / `<button>` element — no need to declare them in PHP. Handy for
+`data-*`, `aria-*`, `autocomplete`, `maxlength`, Alpine `x-` directives, etc.
+
+```blade
+<x-roro-text name="email" label="Email" data-testid="email" autocomplete="email" maxlength="120"/>
+```
+
+renders `... data-testid="email" autocomplete="email" maxlength="120">` on the input.
+Custom CSS classes still go through the dedicated `class` attribute and are merged with the
+component's own `roro-*` classes.
+
+---
+
 ## Publishing Assets
 
 After installing **Roro Form**, you may want to customize its views or configuration.

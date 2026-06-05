@@ -17,32 +17,28 @@ class RoroElement {
     }
 
     async registerElement() {
+        // Laisse le DOM se stabiliser (l'element peut venir d'etre injecte).
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        // Vérifie si l'élément existe déjà dans le DOM
-        this.elt = $('#' + this.id);
-        if (this.elt.length) {
-            this.isFromDom = true;
-            this.registerEvents();
-            return this;
-        }
+        // 1) Deja present dans le DOM.
+        const existing = $('#' + this.id);
+        if (existing.length) return this.finalize(existing, true);
 
-        // Vérifie le cache
+        // 2) Clonage depuis le cache de templates.
         if (this.useCache && RoroElement.cache[this.eltType]) {
-            this.elt = RoroElement.cache[this.eltType].clone(true, true);
-            this.elt.attr('id',this.id);
-            this.isFromDom = false;
-            this.registerEvents();
-            return this;
+            return this.finalize(RoroElement.cache[this.eltType].clone(true, true), false);
         }
 
-        // Charge via AJAX
+        // 3) Chargement via AJAX (et mise en cache du template si demande).
         const $elt = await this.loadElement();
         if (this.useCache) RoroElement.cache[this.eltType] = $elt.clone(true, true);
+        return this.finalize($elt, false);
+    }
 
-        this.elt = $elt;
-        this.elt.attr('id',this.id);
-        this.isFromDom = false;
+    // Branche commune aux 3 cas : pose l'element + son id, puis cable les events.
+    finalize(elt, isFromDom) {
+        this.elt = isFromDom ? elt : elt.attr('id', this.id);
+        this.isFromDom = isFromDom;
         this.registerEvents();
         return this;
     }
@@ -59,9 +55,8 @@ class RoroElement {
         });
     }
 
-    // À surcharger dans les classes enfants
+    // A surcharger dans les classes enfants.
     registerEvents() {}
 
-    // Méthode helper pour mettre à jour DOM depuis données
     syncDom() {}
 }

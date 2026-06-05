@@ -28,7 +28,10 @@
                 min="{{ $min ?? 0 }}"
                 max="{{ $max ?? 100 }}"
                 step="{{$step}}"
-                class="roro-input roro-input-range w-full range-slider {{$class}}"
+                {{ $attributes->class([
+                    'roro-input roro-input-range w-full range-slider',
+                    $class,
+                ]) }}
                 oninput="this.nextElementSibling.innerText = this.value"
             >
             <span class="min-w-[40px] text-gray-700 font-semibold">{{ $value }}</span>

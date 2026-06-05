@@ -2,9 +2,16 @@
 /vendor/
 composer.lock
 
-# IDE
+# Dépendances Node (outil de build des assets JS — réinstallables via `npm install`)
+/node_modules/
+npm-debug.log*
+
+# NB : resources/js/dist/ EST commité volontairement (c'est ce que le package sert).
+
+# IDE / outils
 .idea/
 .vscode/
+.claude/
 
 # macOS
 .DS_Store

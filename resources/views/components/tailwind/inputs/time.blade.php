@@ -31,11 +31,10 @@
                 @if(!is_null($min)) min="{{ $min }}" @endif
                 @if(!is_null($max)) max="{{ $max }}" @endif
                 @if(!is_null($step)) step="{{ $step }}" @endif
-                class="roro-input roro-input-time peer w-full border border-gray-300 bg-white px-4 py-3
-                   text-gray-800 placeholder-transparent
-                   focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none
-                   sm:text-sm md:text-base lg:text-lg transition-all duration-200 {{$class}}
-                "
+                {{ $attributes->class([
+                    'roro-input roro-input-time peer w-full border border-gray-300 bg-white px-4 py-3 text-gray-800 placeholder-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-400 focus:outline-none sm:text-sm md:text-base lg:text-lg transition-all duration-200',
+                    $class,
+                ]) }}
             >
         </div>
     </x-roro-border-error>

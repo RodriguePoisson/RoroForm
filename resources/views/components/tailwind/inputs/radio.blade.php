@@ -17,16 +17,10 @@
         @if($readonly)
             readonly
         @endif
-        class="roro-input roro-input-radio h-5 w-5
-               appearance-none
-               border-2 border-gray-300
-               rounded-full
-               checked:border-blue-600
-               checked:bg-blue-600
-               hover:border-blue-400
-               focus:ring-2 focus:ring-blue-400 focus:outline-none
-               transition-all duration-200
-               {{$class}}"
+        {{ $attributes->class([
+            'roro-input roro-input-radio h-5 w-5 appearance-none border-2 border-gray-300 rounded-full checked:border-blue-600 checked:bg-blue-600 hover:border-blue-400 focus:ring-2 focus:ring-blue-400 focus:outline-none transition-all duration-200',
+            $class,
+        ]) }}
         @if($checked) checked @endif
     >
 

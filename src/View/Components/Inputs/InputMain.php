@@ -2,133 +2,87 @@
 
 namespace RoroForm\View\Components\Inputs;
 
-use Illuminate\Support\MessageBag;
 use RoroForm\View\Components\ComponentMain;
 
 abstract class InputMain extends ComponentMain
 {
-    public ?string $id;
-    public string $class;
-    public bool $hasTopMargins;
-    public ?string $label;
-    public string $labelClass;
-    public string $name;
-    public string $value;
-    public bool $required;
-    public bool $hidden;
-    public string $wrapperClass;
-    public array $populate;
-    public bool $disableJsValidation;
-    public string $placeholder;
-    public ?string $error = null;
-    public bool $noPopulate;
-    public bool $enableError;
-    public bool $disabled;
-    public bool $readonly;
-    public ?string $tooltip;
+    /** Vue Blade rendue (relative au theme). Definie par chaque feuille. */
+    protected string $view;
 
-    /**
-     * Create a new component instance.
-     *
-     * @param  string|null  $id
-     * @param  string  $class
-     * @param  bool  $hasTopMargins
-     * @param  string|null  $label
-     * @param  string  $labelClass
-     * @param  string  $wrapperClass
-     * @param  string  $name
-     * @param  string  $value
-     * @param  bool  $required
-     * @param  bool  $hidden
-     * @param  bool  $disabled
-     * @param  bool  $readonly
-     * @param  array  $populate
-     * @param  bool  $disableJsValidation
-     * @param  bool  $noPopulate
-     * @param  string  $placeholder
-     * @param string|null $tooltip
-     * @param  bool  $enableError
-     */
+    /** Message d'erreur de validation, calcule a la construction. */
+    public ?string $error = null;
 
     public function __construct(
-        ?string $id = null,
-        string $class = '',
-        bool $hasTopMargins = true,
-        ?string $label = null,
-        string $labelClass = '',
-        string $wrapperClass = '',
-        bool $required = false,
-        bool $hidden = false,
-        bool $disabled = false,
-        bool $readonly = false,
-        array $populate = [],
-        ?bool $disableJsValidation = null,
-        string $value = '',
-        string $placeholder = '',
-        string $name = '',
-        bool $enableError = true,
-        ?string $tooltip = null,
-        bool $noPopulate = false,
+        public ?string $id = null,
+        public string $class = '',
+        public bool $hasTopMargins = true,
+        public ?string $label = null,
+        public string $labelClass = '',
+        public string $wrapperClass = '',
+        public bool $required = false,
+        public bool $hidden = false,
+        public bool $disabled = false,
+        public bool $readonly = false,
+        public array $populate = [],
+        public ?bool $disableJsValidation = null,
+        public string $value = '',
+        public string $placeholder = '',
+        public string $name = '',
+        public bool $enableError = true,
+        public ?string $tooltip = null,
+        public bool $noPopulate = false,
     ) {
         parent::__construct();
-        $this->disableJsValidation = $disableJsValidation ?? !config('roroform.defaultJsValidation');
-        $this->id = $id;
-        if (!$this->id) {
-            $this->id = uniqid();
-        }
-        $this->class = $class;
-        $this->hasTopMargins = $hasTopMargins;
-        $this->label = $label;
-        $this->name = $name;
-        $this->required = $required;
-        $this->hidden = $hidden;
-        $this->value = $value;
-        $this->placeholder = $placeholder;
-        $this->labelClass = $labelClass;
-        $this->populate = $populate;
-        $this->wrapperClass = $wrapperClass;
-        $this->readonly = $readonly;
-        $this->disabled = $disabled;
-        $this->enableError = $enableError;
-        $this->tooltip = $tooltip;
+
+        $this->id ??= uniqid();
+        $this->disableJsValidation ??= !config('roroform.defaultJsValidation');
+
         $this->getError();
 
-        $this->noPopulate = $noPopulate;
         if (!$this->noPopulate) {
             $this->populateValue();
         }
     }
 
+    public function render()
+    {
+        return view("roroform::components.{$this->theme}.{$this->view}");
+    }
+
     protected function normalizeOldName(string $name): string
     {
         $name = preg_replace('/\[(\w*)\]/', '.$1', $name);
-        $name = rtrim($name, '.');
-        return $name;
+
+        return rtrim($name, '.');
     }
 
-    private function populateValue(): void
+    /** Valeurs `old()` (apres echec de validation), toujours normalisees en tableau. */
+    protected function resolveOld(): array
     {
-        $key = $this->normalizeOldName($this->name);
+        $old = old($this->normalizeOldName($this->name), []);
 
-        $oldValue = old($key, []);
-        if (!is_array($oldValue)) {
-            $oldValue = [$oldValue];
-        }
+        return is_array($old) ? $old : [$old];
+    }
 
-        $this->populate = array_merge($oldValue, $this->populate);
+    protected function populateValue(): void
+    {
+        $this->populate = array_merge($this->resolveOld(), $this->populate);
 
         foreach ($this->populate as $item) {
             if ($item) {
                 $this->value = $item;
+                $this->onPopulated($item);
                 break;
             }
         }
     }
 
-    private function getError(): void
+    /** Hook surchargeable : appele quand une valeur non vide a ete repeuplee. */
+    protected function onPopulated(string $item): void {}
+
+    protected function getError(): void
     {
         $errors = session('errors');
-        $key = $this->normalizeOldName($this->name);
-        $this->error = $errors ? $errors->first($key) : '';
+        $this->error = $errors ? $errors->first($this->normalizeOldName($this->name)) : '';
     }
 }

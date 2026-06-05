@@ -6,20 +6,14 @@ use RoroForm\View\Components\ComponentMain;
 
 class Error extends ComponentMain
 {
-
-    public ?string $error;
-    public ?string $id;
-    public bool $hidden;
-
-    public function __construct($error = null,$id = null,$hidden = false)
-    {
+    public function __construct(
+        public ?string $error = null,
+        public ?string $id = null,
+        public bool $hidden = false,
+    ) {
         parent::__construct();
-        $this->error = $error;
-        $this->id = $id;
-        if(!$this->id){
-            $this->id = uniqid();
-        }
-        $this->hidden = $hidden;
+
+        $this->id ??= uniqid();
     }
 
     public function render()
