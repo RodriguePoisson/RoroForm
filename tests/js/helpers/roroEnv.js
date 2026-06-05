@@ -5,19 +5,20 @@
  * `class X extends Y` sees the classes declared before it, and every
  * `window.X = X` persists on the jsdom window afterwards.
  *
- * These tests assert the runtime's *behavioural contract* (given this DOM/these
- * inputs, the value/markup is X) — the contract a future vanilla rewrite must
- * preserve — not the jQuery implementation details.
+ * The runtime is dependency-free (vanilla DOM, no jQuery), so the loader binds
+ * nothing extra. Tests drive the DOM with native APIs (document.querySelector,
+ * element.value, dispatchEvent, ...) and assert the runtime's behavioural
+ * contract (given this DOM/these inputs, the value/markup is X).
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import jqueryImport from 'jquery';
 
 const ROOT = process.cwd();
 const SRC = path.join(ROOT, 'resources/js');
 
 // Mirrors build.mjs / the inline-injection order; `extends` clauses resolve.
 const FILES = [
+    'Models/dom.js',
     'Models/RoroElement.js',
     'Models/Input.js',
     'global.js',
@@ -34,24 +35,16 @@ const FILES = [
 
 let scriptLoaded = false;
 
-/** Bind jQuery to the jsdom window and run the concatenated runtime once. */
+/** Run the concatenated runtime once against the jsdom window. */
 export function loadRoro() {
-    if (!window.$) {
-        // `jquery` returns jQuery directly when a global document exists, or a
-        // factory otherwise — handle both so the loader is environment-proof.
-        const jQuery = (typeof jqueryImport === 'function' && jqueryImport.fn)
-            ? jqueryImport
-            : jqueryImport(window);
-        window.$ = window.jQuery = jQuery;
-        globalThis.$ = globalThis.jQuery = jQuery;
-    }
-
     if (!scriptLoaded) {
         const src = FILES
             .map((f) => fs.readFileSync(path.join(SRC, f), 'utf8'))
             .join('\n;\n');
-        const run = new Function('window', '$', 'jQuery', 'document', 'crypto', src);
-        run(window, window.$, window.jQuery, window.document, globalThis.crypto);
+        // One function body => later `class X extends Y` see earlier classes,
+        // and every `window.X = X` persists on the jsdom window afterwards.
+        const run = new Function('window', 'document', 'crypto', src);
+        run(window, window.document, globalThis.crypto);
         scriptLoaded = true;
     }
 

@@ -242,16 +242,16 @@ function fileFixture(id = 'avatar', { disabled = false, readonly = false, hidden
 // Helper: register a select and wait for it to be ready
 // ---------------------------------------------------------------------------
 async function registerSelect(id) {
-    const $w = window.$('#roro-wrapper-' + id);
-    window.addSelect($w);
+    const w = document.getElementById('roro-wrapper-' + id);
+    window.addSelect(w);
     const inst = window.listOfSelect[window.listOfSelect.length - 1];
     await inst.ready;
     return inst;
 }
 
 async function registerMultiSelect(id) {
-    const $w = window.$('#roro-wrapper-' + id);
-    window.addMultiSelect($w);
+    const w = document.getElementById('roro-wrapper-' + id);
+    window.addMultiSelect(w);
     const inst = window.listOfSelect[window.listOfSelect.length - 1];
     await inst.ready;
     return inst;
@@ -344,7 +344,7 @@ describe('value() — text input', () => {
 
     it('set: updates input value', () => {
         window.roro('email').value('new@x.com');
-        expect(window.$('#email').val()).toBe('new@x.com');
+        expect(document.getElementById('email').value).toBe('new@x.com');
     });
 
     it('set: returns handle for chaining', () => {
@@ -359,7 +359,7 @@ describe('value() — text input', () => {
 
     it('set triggers a change event on the element', () => {
         let fired = false;
-        window.$('#email').on('change', () => { fired = true; });
+        document.getElementById('email').addEventListener('change', () => { fired = true; });
         window.roro('email').value('trigger@x.com');
         expect(fired).toBe(true);
     });
@@ -382,19 +382,19 @@ describe('value() — checkbox', () => {
     it('set true: checks the box', () => {
         setBody(checkboxFixture('agree', { checked: false }));
         window.roro('agree').value(true);
-        expect(window.$('#agree').is(':checked')).toBe(true);
+        expect(document.getElementById('agree').checked).toBe(true);
     });
 
     it('set false: unchecks the box', () => {
         setBody(checkboxFixture('agree', { checked: true }));
         window.roro('agree').value(false);
-        expect(window.$('#agree').is(':checked')).toBe(false);
+        expect(document.getElementById('agree').checked).toBe(false);
     });
 
     it('set triggers change event', () => {
         setBody(checkboxFixture('agree'));
         let fired = false;
-        window.$('#agree').on('change', () => { fired = true; });
+        document.getElementById('agree').addEventListener('change', () => { fired = true; });
         window.roro('agree').value(true);
         expect(fired).toBe(true);
     });
@@ -417,18 +417,20 @@ describe('value() — radio', () => {
 
     it('set: selects the radio with matching value', () => {
         window.roro('color-red').value('blue');
-        expect(window.$('input[name="color"][value="blue"]').is(':checked')).toBe(true);
-        expect(window.$('input[name="color"][value="red"]').is(':checked')).toBe(false);
+        expect(document.querySelector('input[name="color"][value="blue"]').checked).toBe(true);
+        expect(document.querySelector('input[name="color"][value="red"]').checked).toBe(false);
     });
 
     it('set: handles selection from any radio in the group', () => {
         window.roro('color-blue').value('red');
-        expect(window.$('input[name="color"][value="red"]').is(':checked')).toBe(true);
+        expect(document.querySelector('input[name="color"][value="red"]').checked).toBe(true);
     });
 
     it('set triggers change on the group', () => {
         let count = 0;
-        window.$('input[name="color"]').on('change', () => { count++; });
+        document.querySelectorAll('input[name="color"]').forEach(el => {
+            el.addEventListener('change', () => { count++; });
+        });
         window.roro('color-red').value('red');
         expect(count).toBeGreaterThan(0);
     });
@@ -522,25 +524,25 @@ describe('clear()', () => {
     it('clears a text input', () => {
         setBody(textFixture('email', { value: 'a@b.com' }));
         window.roro('email').clear();
-        expect(window.$('#email').val()).toBe('');
+        expect(document.getElementById('email').value).toBe('');
     });
 
     it('unchecks a checkbox', () => {
         setBody(checkboxFixture('agree', { checked: true }));
         window.roro('agree').clear();
-        expect(window.$('#agree').is(':checked')).toBe(false);
+        expect(document.getElementById('agree').checked).toBe(false);
     });
 
     it('deselects all radios in the group', () => {
         setBody(radioFixture('color', 'red'));
         window.roro('color-red').clear();
-        expect(window.$('input[name="color"]:checked').length).toBe(0);
+        expect(document.querySelectorAll('input[name="color"]:checked').length).toBe(0);
     });
 
     it('reset() is an alias for clear()', () => {
         setBody(textFixture('email', { value: 'a@b.com' }));
         window.roro('email').reset();
-        expect(window.$('#email').val()).toBe('');
+        expect(document.getElementById('email').value).toBe('');
     });
 });
 
@@ -553,13 +555,13 @@ describe('disable() / enable() / isDisabled()', () => {
 
         it('disable() sets the disabled prop', () => {
             window.roro('email').disable();
-            expect(window.$('#email').prop('disabled')).toBe(true);
+            expect(document.getElementById('email').disabled).toBe(true);
         });
 
         it('enable() removes disabled', () => {
             window.roro('email').disable();
             window.roro('email').enable();
-            expect(window.$('#email').prop('disabled')).toBe(false);
+            expect(document.getElementById('email').disabled).toBe(false);
         });
 
         it('isDisabled() returns true when disabled', () => {
@@ -574,7 +576,7 @@ describe('disable() / enable() / isDisabled()', () => {
         it('disable(false) enables the input', () => {
             window.roro('email').disable();
             window.roro('email').disable(false);
-            expect(window.$('#email').prop('disabled')).toBe(false);
+            expect(document.getElementById('email').disabled).toBe(false);
         });
 
         it('disable() returns handle for chaining', () => {
@@ -607,13 +609,13 @@ describe('readonly() / editable() / isReadonly()', () => {
 
     it('readonly() sets the readonly prop', () => {
         window.roro('email').readonly();
-        expect(window.$('#email').prop('readonly')).toBe(true);
+        expect(document.getElementById('email').readOnly).toBe(true);
     });
 
     it('editable() clears readonly', () => {
         window.roro('email').readonly();
         window.roro('email').editable();
-        expect(window.$('#email').prop('readonly')).toBe(false);
+        expect(document.getElementById('email').readOnly).toBe(false);
     });
 
     it('isReadonly() reflects the prop', () => {
@@ -636,13 +638,13 @@ describe('required() / optional() / isRequired()', () => {
 
     it('required() sets the required prop', () => {
         window.roro('email').required();
-        expect(window.$('#email').prop('required')).toBe(true);
+        expect(document.getElementById('email').required).toBe(true);
     });
 
     it('optional() clears required', () => {
         window.roro('email').required();
         window.roro('email').optional();
-        expect(window.$('#email').prop('required')).toBe(false);
+        expect(document.getElementById('email').required).toBe(false);
     });
 
     it('isRequired() returns true when required', () => {
@@ -658,43 +660,42 @@ describe('required() / optional() / isRequired()', () => {
 // ===========================================================================
 // 13. show / hide / toggle / isVisible
 //
-// NOTE: jsdom has no layout engine, so jQuery :visible (which relies on
-// offsetWidth/offsetHeight) always returns false regardless of display style.
-// We therefore assert on css('display') to verify show/hide behaviour.
-// The isVisible() method on RoroHandle uses $wrapper().is(':visible'), which
-// always returns false in jsdom — we test the actual (jsdom-constrained)
-// behaviour so a future rewrite knows this is a known limitation.
+// NOTE: jsdom has no layout engine, so :visible checks that rely on
+// offsetWidth/offsetHeight always return false regardless of display style.
+// We therefore assert on el.style.display to verify show/hide behaviour.
+// The isVisible() method on RoroHandle uses RoroDom.isVisible() which checks
+// the display chain — always returns false in jsdom (known limitation).
 // ===========================================================================
 describe('show() / hide() / toggle() / isVisible()', () => {
     it('hide() sets wrapper display to none', () => {
         setBody(textFixture('email'));
         window.roro('email').hide();
-        expect(window.$('#roro-wrapper-email').css('display')).toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).toBe('none');
     });
 
     it('show() sets wrapper display to non-none', () => {
         setBody(textFixture('email', { hidden: true }));
         window.roro('email').show();
-        expect(window.$('#roro-wrapper-email').css('display')).not.toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).not.toBe('none');
     });
 
     it('isVisible() returns false after hide() (jsdom offsetWidth is always 0)', () => {
         setBody(textFixture('email'));
         window.roro('email').hide();
-        // isVisible() uses jQuery :visible which depends on layout — always false in jsdom.
+        // isVisible() checks display chain — always false in jsdom.
         expect(window.roro('email').isVisible()).toBe(false);
     });
 
     it('toggle(false) sets wrapper display to none', () => {
         setBody(textFixture('email'));
         window.roro('email').toggle(false);
-        expect(window.$('#roro-wrapper-email').css('display')).toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).toBe('none');
     });
 
     it('toggle(true) sets wrapper display to non-none', () => {
         setBody(textFixture('email', { hidden: true }));
         window.roro('email').toggle(true);
-        expect(window.$('#roro-wrapper-email').css('display')).not.toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).not.toBe('none');
     });
 
     it('show() returns handle for chaining', () => {
@@ -713,9 +714,9 @@ describe('show() / hide() / toggle() / isVisible()', () => {
         setBody(selectFixture('country'));
         await registerSelect('country');
         window.roro('country').hide();
-        expect(window.$('#roro-wrapper-country').css('display')).toBe('none');
+        expect(document.getElementById('roro-wrapper-country').style.display).toBe('none');
         window.roro('country').show();
-        expect(window.$('#roro-wrapper-country').css('display')).not.toBe('none');
+        expect(document.getElementById('roro-wrapper-country').style.display).not.toBe('none');
     });
 });
 
@@ -727,17 +728,17 @@ describe('error() / clearError()', () => {
 
     it('error() shows the error container with the given message', () => {
         window.roro('email').error('Required field');
-        const $container = window.$('#roro-wrapper-email .roro-input-error-container');
-        // jsdom :visible always false; use css('display') to assert visibility.
-        expect($container.css('display')).not.toBe('none');
-        expect($container.find('.roro-input-error-message').text()).toBe('Required field');
+        const container = document.querySelector('#roro-wrapper-email .roro-input-error-container');
+        // jsdom: assert visibility via style.display
+        expect(container.style.display).not.toBe('none');
+        expect(container.querySelector('.roro-input-error-message').textContent).toBe('Required field');
     });
 
     it('clearError() hides the error container', () => {
         window.roro('email').error('Oops');
         window.roro('email').clearError();
-        const $container = window.$('#roro-wrapper-email .roro-input-error-container');
-        expect($container.css('display')).toBe('none');
+        const container = document.querySelector('#roro-wrapper-email .roro-input-error-container');
+        expect(container.style.display).toBe('none');
     });
 
     it('error() returns handle for chaining', () => {
@@ -791,16 +792,15 @@ describe('placeholder()', () => {
     it('set: updates the placeholder', () => {
         setBody(textFixture('email', { placeholder: 'old' }));
         window.roro('email').placeholder('new placeholder');
-        expect(window.$('#email').attr('placeholder')).toBe('new placeholder');
+        expect(document.getElementById('email').getAttribute('placeholder')).toBe('new placeholder');
     });
 
     it('for a select, get/set operates on the text-input', async () => {
         setBody(selectFixture('country', { options: [['France', 'fr']] }));
         await registerSelect('country');
         // The roro-select-text-input carries the placeholder attribute.
-        const before = window.roro('country').placeholder();
         window.roro('country').placeholder('Choose...');
-        expect(window.$('#roro-wrapper-country .roro-select-text-input').attr('placeholder')).toBe('Choose...');
+        expect(document.querySelector('#roro-wrapper-country .roro-select-text-input').getAttribute('placeholder')).toBe('Choose...');
     });
 });
 
@@ -818,7 +818,7 @@ describe('attr() / prop() pass-through', () => {
         const h = window.roro('email');
         const result = h.attr('data-custom', 'foo');
         expect(result).toBe(h);
-        expect(window.$('#email').attr('data-custom')).toBe('foo');
+        expect(document.getElementById('email').getAttribute('data-custom')).toBe('foo');
     });
 
     it('prop(name) reads a property', () => {
@@ -829,7 +829,7 @@ describe('attr() / prop() pass-through', () => {
         const h = window.roro('email');
         const result = h.prop('disabled', true);
         expect(result).toBe(h);
-        expect(window.$('#email').prop('disabled')).toBe(true);
+        expect(document.getElementById('email').disabled).toBe(true);
     });
 });
 
@@ -840,15 +840,15 @@ describe('addClass()', () => {
     it('adds a class to a text input', () => {
         setBody(textFixture('email'));
         window.roro('email').addClass('my-custom-class');
-        expect(window.$('#email').hasClass('my-custom-class')).toBe(true);
+        expect(document.getElementById('email').classList.contains('my-custom-class')).toBe(true);
     });
 
     it('adds class to the text-input element of a select', async () => {
         setBody(selectFixture('country', { options: [['France', 'fr']] }));
         await registerSelect('country');
         window.roro('country').addClass('select-highlight');
-        const $textInput = window.$('#roro-wrapper-country .roro-select-text-input');
-        expect($textInput.hasClass('select-highlight')).toBe(true);
+        const textInput = document.querySelector('#roro-wrapper-country .roro-select-text-input');
+        expect(textInput.classList.contains('select-highlight')).toBe(true);
     });
 
     it('returns handle for chaining', () => {
@@ -870,50 +870,52 @@ describe('flat helpers delegate to the handle', () => {
 
     it('roroValue(id, v) sets the value', () => {
         window.roroValue('email', 'updated@x.com');
-        expect(window.$('#email').val()).toBe('updated@x.com');
+        expect(document.getElementById('email').value).toBe('updated@x.com');
     });
 
     it('roroHide(id) hides the wrapper', () => {
         window.roroHide('email');
-        expect(window.$('#roro-wrapper-email').css('display')).toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).toBe('none');
     });
 
     it('roroShow(id) shows the wrapper', () => {
         window.roroHide('email');
         window.roroShow('email');
-        expect(window.$('#roro-wrapper-email').css('display')).not.toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).not.toBe('none');
     });
 
     it('roroClear(id) clears the value', () => {
         window.roroClear('email');
-        expect(window.$('#email').val()).toBe('');
+        expect(document.getElementById('email').value).toBe('');
     });
 
     it('roroDisable(id) disables the input', () => {
         window.roroDisable('email');
-        expect(window.$('#email').prop('disabled')).toBe(true);
+        expect(document.getElementById('email').disabled).toBe(true);
     });
 
     it('roroEnable(id) enables the input', () => {
         window.roroDisable('email');
         window.roroEnable('email');
-        expect(window.$('#email').prop('disabled')).toBe(false);
+        expect(document.getElementById('email').disabled).toBe(false);
     });
 
     it('roroReadonly(id) makes the input readonly', () => {
         window.roroReadonly('email');
-        expect(window.$('#email').prop('readonly')).toBe(true);
+        expect(document.getElementById('email').readOnly).toBe(true);
     });
 
     it('roroRequired(id) sets required', () => {
         window.roroRequired('email');
-        expect(window.$('#email').prop('required')).toBe(true);
+        expect(document.getElementById('email').required).toBe(true);
     });
 
     it('roroClearError(id) hides error container', () => {
         window.roro('email').error('bad');
         window.roroClearError('email');
-        expect(window.$('#roro-wrapper-email .roro-input-error-container').is(':visible')).toBe(false);
+        const container = document.querySelector('#roro-wrapper-email .roro-input-error-container');
+        // After clearError the container should be hidden (display:none).
+        expect(container.style.display).toBe('none');
     });
 
     it('roroLabel(id, text) updates label', () => {
@@ -941,9 +943,10 @@ describe('roro() id normalisation', () => {
         expect(window.roro(el).value()).toBe('a@b.com');
     });
 
-    it('accepts a jQuery object', () => {
-        const $el = window.$('#email');
-        expect(window.roro($el).value()).toBe('a@b.com');
+    // jQuery is gone; the equivalent is passing a DOM node (same intent: non-string target).
+    it('accepts a DOM node (non-string target)', () => {
+        const el = document.getElementById('email');
+        expect(window.roro(el).value()).toBe('a@b.com');
     });
 });
 
@@ -999,22 +1002,23 @@ describe('file clear()', () => {
 describe('$wrapper() resolution', () => {
     it('text input: $wrapper is #roro-wrapper-<id>', () => {
         setBody(textFixture('email'));
-        const $w = window.roro('email').$wrapper();
-        expect($w.attr('id')).toBe('roro-wrapper-email');
+        // $wrapper() now returns a DOM Element (not a jQuery object)
+        const w = window.roro('email').$wrapper();
+        expect(w.id).toBe('roro-wrapper-email');
     });
 
     it('select: $wrapper is #roro-wrapper-<id>', async () => {
         setBody(selectFixture('country'));
         await registerSelect('country');
-        const $w = window.roro('country').$wrapper();
-        expect($w.attr('id')).toBe('roro-wrapper-country');
+        const w = window.roro('country').$wrapper();
+        expect(w.id).toBe('roro-wrapper-country');
     });
 
     it('multi-select: $wrapper is #roro-wrapper-<id>', async () => {
         setBody(multiSelectFixture('tags'));
         await registerMultiSelect('tags');
-        const $w = window.roro('tags').$wrapper();
-        expect($w.attr('id')).toBe('roro-wrapper-tags');
+        const w = window.roro('tags').$wrapper();
+        expect(w.id).toBe('roro-wrapper-tags');
     });
 });
 
@@ -1024,21 +1028,22 @@ describe('$wrapper() resolution', () => {
 describe('$control()', () => {
     it('for text: $control() is the input element itself', () => {
         setBody(textFixture('email'));
-        expect(window.roro('email').$control().attr('id')).toBe('email');
+        // $control() now returns a DOM Element
+        expect(window.roro('email').$control().id).toBe('email');
     });
 
     it('for select: $control() is the .roro-select-text-input', async () => {
         setBody(selectFixture('country', { options: [['France', 'fr']] }));
         await registerSelect('country');
-        const $c = window.roro('country').$control();
-        expect($c.hasClass('roro-select-text-input')).toBe(true);
+        const c = window.roro('country').$control();
+        expect(c.classList.contains('roro-select-text-input')).toBe(true);
     });
 
     it('for multi-select: $control() is the .roro-select-text-input', async () => {
         setBody(multiSelectFixture('tags'));
         await registerMultiSelect('tags');
-        const $c = window.roro('tags').$control();
-        expect($c.hasClass('roro-select-text-input')).toBe(true);
+        const c = window.roro('tags').$control();
+        expect(c.classList.contains('roro-select-text-input')).toBe(true);
     });
 });
 
@@ -1100,11 +1105,11 @@ describe('roroToggleVisibility()', () => {
     it('passes true to toggle() — shows', () => {
         window.roro('email').hide();
         window.roroToggleVisibility('email', true);
-        expect(window.$('#roro-wrapper-email').css('display')).not.toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).not.toBe('none');
     });
 
     it('passes false to toggle() — hides', () => {
         window.roroToggleVisibility('email', false);
-        expect(window.$('#roro-wrapper-email').css('display')).toBe('none');
+        expect(document.getElementById('roro-wrapper-email').style.display).toBe('none');
     });
 });

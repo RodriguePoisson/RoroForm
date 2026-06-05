@@ -202,7 +202,7 @@ describe('addRow', () => {
         setBody(makeFixture({ id, rows: [{ name: 'Alice' }] }));
         let fired = 0;
         // Attach listener before instantiation.
-        window.$('#roro-wrapper-' + id).on('roro:change', () => { fired++; });
+        document.getElementById('roro-wrapper-' + id).addEventListener('roro:change', () => { fired++; });
         const r = new window.RoroRepeatable(id);
         await r.ready;
         expect(fired).toBe(0);
@@ -211,7 +211,7 @@ describe('addRow', () => {
     it('emits roro:change when not in init', async () => {
         const r = await build({ rows: [] });
         let fired = 0;
-        window.$(r.wrapper).on('roro:change', () => { fired++; });
+        r.wrapper.addEventListener('roro:change', () => { fired++; });
         r.addRow(null, false);
         expect(fired).toBe(1);
     });
@@ -247,7 +247,7 @@ describe('removeRow', () => {
     it('emits roro:change after removal', async () => {
         const r = await build({ rows: [{ name: 'A' }, { name: 'B' }] });
         let fired = 0;
-        window.$(r.wrapper).on('roro:change', () => { fired++; });
+        r.wrapper.addEventListener('roro:change', () => { fired++; });
         r.removeRow(r.rowAt(0));
         expect(fired).toBe(1);
     });
@@ -289,9 +289,9 @@ describe('lockRow / isRowLocked', () => {
 
     it('disables the remove button on a locked row via refreshControls', async () => {
         const r = await build({ rows: [{ name: 'A' }, { name: 'B' }] });
-        const $row = r.rowAt(0);
-        r.lockRow($row, true);
-        const removeBtn = $row.find('.roro-repeatable-remove')[0];
+        const row = r.rowAt(0);
+        r.lockRow(row, true);
+        const removeBtn = row.querySelector('.roro-repeatable-remove');
         expect(removeBtn.disabled).toBe(true);
     });
 });
@@ -556,7 +556,7 @@ describe('moveRow', () => {
             rows: [{ name: 'First' }, { name: 'Second' }],
         });
         let fired = 0;
-        window.$(r.wrapper).on('roro:change', () => { fired++; });
+        r.wrapper.addEventListener('roro:change', () => { fired++; });
         r.moveRow(r.rowAt(0), 1);
         expect(fired).toBe(1);
     });
@@ -582,7 +582,7 @@ describe('emitChange', () => {
     it('passes the current getValue() result as event data', async () => {
         const r = await build({ rows: [] });
         let captured;
-        window.$(r.wrapper).on('roro:change', (_ev, val) => { captured = val; });
+        r.wrapper.addEventListener('roro:change', (ev) => { captured = ev.detail; });
         r.addRow({ name: 'Test' }, false);
         // The event data is the full getValue() snapshot
         expect(Array.isArray(captured)).toBe(true);
@@ -591,7 +591,7 @@ describe('emitChange', () => {
     it('fires on removeRow', async () => {
         const r = await build({ rows: [{ name: 'A' }, { name: 'B' }] });
         let fired = 0;
-        window.$(r.wrapper).on('roro:change', () => { fired++; });
+        r.wrapper.addEventListener('roro:change', () => { fired++; });
         r.removeRow(r.rowAt(0));
         expect(fired).toBe(1);
     });
@@ -763,23 +763,23 @@ describe('pure logic — indexName / deindex', () => {
 describe('rowEl / rowAt', () => {
     it('rowAt returns the row at the given position index', async () => {
         const r = await build({ rows: [{ name: 'A' }, { name: 'B' }] });
-        const $row = r.rowAt(1);
-        expect($row.length).toBe(1);
+        const row = r.rowAt(1);
+        expect(row).toBeTruthy();
         // The second row's input should contain 'B'
-        expect($row.find('input').val()).toBe('B');
+        expect(row.querySelector('input').value).toBe('B');
     });
 
     it('rowEl with a number resolves by position', async () => {
         const r = await build({ rows: [{ name: 'X' }, { name: 'Y' }] });
-        const $row = r.rowEl(0);
-        expect($row.find('input').val()).toBe('X');
+        const row = r.rowEl(0);
+        expect(row.querySelector('input').value).toBe('X');
     });
 
-    it('rowEl passes through a jQuery object unchanged', async () => {
+    it('rowEl passes through a DOM element unchanged', async () => {
         const r = await build({ rows: [{ name: 'P' }] });
-        const $orig = r.rowAt(0);
-        const $via = r.rowEl($orig);
-        expect($via[0]).toBe($orig[0]);
+        const orig = r.rowAt(0);
+        const via = r.rowEl(orig);
+        expect(via).toBe(orig);
     });
 });
 
@@ -791,7 +791,7 @@ describe('addRepeatable global helper', () => {
     it('registers and returns an instance', async () => {
         const id = uid();
         setBody(makeFixture({ id, rows: [{ name: 'Z' }] }));
-        const inst = window.addRepeatable(window.$('#roro-wrapper-' + id));
+        const inst = window.addRepeatable(document.getElementById('roro-wrapper-' + id));
         await inst.ready;
         expect(inst.count()).toBe(1);
         expect(window.listOfRepeatable).toContain(inst);

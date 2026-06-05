@@ -24,16 +24,17 @@ Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whol
 - **🧩 One tag per field, zero boilerplate.** `<x-roro-text>`, `<x-roro-select>`, `<x-roro-file>`… 25+ components that render label, input, validation border, error message and required marker — consistently, in your theme.
 - **🔁 Repeatable groups that *just work*.** Nest **anything** (including searchable selects, multi-selects and file inputs), add/remove/reorder rows, and submit a clean `contacts[0][name]` array. Old input is restored after a failed validation with **zero extra wiring**. This is the feature other packages don't ship.
 - **🎛️ A real JavaScript API.** A chainable, **type-aware** facade: `roro('email').value('a@b.c').required().focus()`. The *same* `.value()` call reads/writes a text input, a select, a multi-select array, a checkbox boolean, a radio group or a list of file names. Most form packages ship **no** runtime API at all.
+- **🪶 Zero dependencies.** The runtime is **vanilla JavaScript** — no jQuery, no framework, nothing to load on the page. Drop it into any stack (Livewire, Alpine, Inertia, Vue, React or plain Blade) without conflicts.
 - **🔎 Smart selects, server-rendered.** Searchable single & multi-selects with tags, option groups, and dynamic options — added client-side instantly or fetched from *your* JSON endpoint. Options render server-side, so there's no flash and no mandatory round-trip.
 - **🪄 Laravel-native by default.** Auto-repopulation from `old()`, per-field error messages pulled straight from `session('errors')`, CSRF, AJAX submit with server-side validation errors mapped back onto the right fields.
 - **🎨 Themeable.** Ships complete **Tailwind** and **Bootstrap** themes. Switch with one config line, or publish the Blade views and own the markup.
-- **📦 No build step for you.** The JS is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
+- **📦 No build step for you.** The vanilla-JS runtime is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
 
 ---
 
 ## Quick start
 
-> **Requirements:** PHP `^8.0` · Laravel `9 → 13` · **jQuery** loaded on the page · Tailwind **or** Bootstrap CSS present (depending on the theme you pick).
+> **Requirements:** PHP `^8.0` · Laravel `9 → 13` · Tailwind **or** Bootstrap CSS present (depending on the theme you pick). **No JavaScript dependencies** — the runtime is vanilla JS.
 
 **1. Install**
 
@@ -59,7 +60,7 @@ return [
 ];
 ```
 
-**3. Make sure jQuery is on the page**, then drop a form in any Blade view:
+**3. Drop a form** in any Blade view — no scripts to add:
 
 ```blade
 <x-roro-form action="/subscribe" :multipart="true" id="signup">
@@ -298,7 +299,7 @@ Selects, multi-selects and file inputs added in new rows are wired up **exactly*
 
 <br>
 
-A small, jQuery-based facade so you can drive any field without caring about its underlying markup. Everything is **chainable** and **type-aware** — the same call works on a text input, a select, a checkbox or a file field.
+A small, **dependency-free** facade so you can drive any field without caring about its underlying markup. Everything is **chainable** and **type-aware** — the same call works on a text input, a select, a checkbox or a file field.
 
 ```js
 roro('email')                  // -> handle, auto-detecting the field type
@@ -394,8 +395,15 @@ RoroForm is wired into the framework, so the usual controller flow needs no fron
 - **AJAX submit.** `<x-roro-button :ajax="true">` posts via `FormData` (file uploads included), shows a loading overlay, and fires events:
 
 ```js
-$('#signup').on('roro:ajax:success', (e, response) => { /* ... */ });
-$('#signup').on('roro:ajax:error',   (e, xhr)      => { /* ... */ });
+// Native events — the payload is on event.detail:
+const form = document.getElementById('signup');
+form.addEventListener('roro:ajax:success', e => { const response = e.detail; /* ... */ });
+form.addEventListener('roro:ajax:error',   e => { const xhr      = e.detail; /* ... */ });
+
+// …or the facade shortcut (payload first):
+roro.form('signup')
+    .onSuccess(response => { /* ... */ })
+    .onError(xhr => { /* ... */ });
 ```
 
 Add `:ajax-errors="true"` to the button and a `422` response's `errors` payload is mapped **straight back onto the matching fields** — no manual error handling:
@@ -468,7 +476,7 @@ renders `... data-testid="email" autocomplete="email" maxlength="120">` on the `
 |---|---|
 | **PHP** | `^8.0` |
 | **Laravel** | `9`, `10`, `11`, `12`, `13` |
-| **jQuery** | required on the page (the runtime is jQuery-based) |
+| **JavaScript** | none — the runtime is dependency-free vanilla JS |
 | **CSS** | Tailwind **or** Bootstrap, matching your `theme` config |
 
 ## Installation recap

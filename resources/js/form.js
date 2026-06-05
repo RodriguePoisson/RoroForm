@@ -1,90 +1,99 @@
 window.roroSubmitButton = function (buttonId = null, formId = null) {
     if (!formId || !buttonId) return;
 
-    const form = $('#' + formId);
-    const button = $('#' + buttonId);
+    const form = document.getElementById(formId);
+    const button = document.getElementById(buttonId);
+    if (!form || !button) return;
 
-    if (button.prop('type') !== 'submit') return;
+    if (button.type !== 'submit') return;
 
     roroShowOverlay(true);
 
     const processAjax = () => {
-        if (!form[0].reportValidity()) {
+        if (!form.reportValidity()) {
             roroShowOverlay(false);
             return;
         }
 
-        const formData = new FormData(form[0]);
+        const formData = new FormData(form);
 
-        $.ajax({
-            url: form.attr('action'),
-            type: (form.attr('method') || 'POST').toUpperCase(),
-            data: formData,
-            contentType: false,
-            processData: false,
+        fetch(form.getAttribute('action') || '', {
+            method: (form.getAttribute('method') || 'POST').toUpperCase(),
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
         })
-            .done(response => form.trigger('roro:ajax:success', [response]))
-            .fail((xhr, status, error) => {
-                form.trigger('roro:ajax:error', [xhr, status, error]);
-                if (button.data('ajax-errors') && xhr.responseJSON?.errors) {
-                    populateFormErrors(form, xhr.responseJSON.errors);
+            .then(async (response) => {
+                const data = await response.clone().json().catch(() => null);
+                if (response.ok) {
+                    RoroDom.emit(form, 'roro:ajax:success', data);
+                } else {
+                    RoroDom.emit(form, 'roro:ajax:error', {
+                        status: response.status,
+                        response,
+                        responseJSON: data,
+                    });
+                    if (button.dataset.ajaxErrors && data && data.errors) {
+                        populateFormErrors(form, data.errors);
+                    }
                 }
             })
-            .always(() => roroShowOverlay(false));
+            .catch((error) => {
+                RoroDom.emit(form, 'roro:ajax:error', { status: 0, error });
+            })
+            .finally(() => roroShowOverlay(false));
     };
 
     const processClassic = () => {
-        if (form[0].reportValidity()) {
+        if (form.reportValidity()) {
             form.submit();
         } else {
             roroShowOverlay(false);
         }
     };
 
-    button.data('ajax') ? processAjax() : processClassic();
+    button.dataset.ajax ? processAjax() : processClassic();
 };
 
 window.roroRegisterButtonOnClick = function (buttonId) {
-    const button = $('#' + buttonId);
-    if (!button.length) return;
+    const button = document.getElementById(buttonId);
+    if (!button) return;
 
-    button.on('click', function (event) {
+    RoroDom.on(button, 'click', function (event) {
         event.preventDefault();
-        roroSubmitButton(button.attr('id'), button.data('form-id'));
+        roroSubmitButton(button.id, button.dataset.formId);
     });
 };
 
 window.roroShowOverlay = function (show = true) {
-    const overlay = $('#roro-form-overlay');
-    if (!overlay.length) return;
+    const overlay = document.getElementById('roro-form-overlay');
+    if (!overlay) return;
 
-    show ? overlay.fadeIn(150) : overlay.fadeOut(150);
+    overlay.style.display = show ? 'flex' : 'none';
 };
 
 window.populateFormErrors = function (form, errors) {
     clearFormErrors(form);
     for (let [inputName, messages] of Object.entries(errors)) {
         inputName = normalizeInputName(inputName);
-        const input = form.find(`[name="${inputName}"]`);
-        if (input.length) {
-            roroShowError(input.attr('id'), messages.join(', '), true);
+        const input = form.querySelector(`[name="${inputName}"]`);
+        if (input) {
+            roroShowError(input.id, messages.join(', '), true);
         }
     }
 };
 
-window.clearFormErrors = function(form)
-{
-    form.find('.roro-input').each(function(){
-        roroShowError($(this).attr('id'),'',false);
+window.clearFormErrors = function (form) {
+    RoroDom.qsa(form, '.roro-input').forEach(function (el) {
+        roroShowError(el.id, '', false);
     });
-}
+};
 
-$(document).ready(function () {
-    $('.roro-btn-submit').each(function () {
-        roroRegisterButtonOnClick($(this).attr('id'));
+RoroDom.ready(function () {
+    RoroDom.qsa('.roro-btn-submit').forEach(function (btn) {
+        roroRegisterButtonOnClick(btn.id);
     });
 
-    $('.roro-border-error').each(function () {
-        manageBorderError($(this));
+    RoroDom.qsa('.roro-border-error').forEach(function (el) {
+        manageBorderError(el);
     });
 });

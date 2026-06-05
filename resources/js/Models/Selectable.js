@@ -5,42 +5,54 @@
  *  and clone the existing DOM).
  * --------------------------
  */
+
+// data-disable / data-readonly / data-show are "1"/"0" (or legacy "true"/"").
+function boolData(el, key) {
+    if (!el) return false;
+    const v = el.dataset[key];
+    return v === '1' || v === 'true';
+}
+
 class RoroOption {
-    constructor($node) {
-        this.elt = $node;
-        this.id = $node.attr('id');
-        this.value = $node.data('value');
-        this.label = $node.data('label');
+    constructor(node) {
+        this.elt = node;
+        this.id = node.id;
+        this.value = node.dataset.value;
+        this.label = node.dataset.label;
     }
 
     get categoryLabel() {
-        const $cat = this.elt.closest('.roro-select-category');
-        return $cat.length ? $cat.data('category') : null;
+        const cat = this.elt.closest('.roro-select-category');
+        return cat ? cat.dataset.category : null;
     }
 
     bindClick(select) {
-        // .roro namespace + off() first => no double-binding after a re-render.
-        this.elt.off('click.roro').on('click.roro', () => select.handleOptionClick(this));
+        // Drop the previous handler first => no double-binding after a re-render.
+        if (this._onClick) this.elt.removeEventListener('click', this._onClick);
+        this._onClick = () => select.handleOptionClick(this);
+        this.elt.addEventListener('click', this._onClick);
     }
 
     mark() {
-        this.elt.find('.roro-select-option-check, .roro-select-option-overlay').show();
+        RoroDom.qsa(this.elt, '.roro-select-option-check, .roro-select-option-overlay')
+            .forEach(e => RoroDom.show(e));
     }
 
     unmark() {
-        this.elt.find('.roro-select-option-check, .roro-select-option-overlay').hide();
+        RoroDom.qsa(this.elt, '.roro-select-option-check, .roro-select-option-overlay')
+            .forEach(e => RoroDom.hide(e));
     }
 }
 
 class RoroCategory {
-    constructor($node) {
-        this.elt = $node;
-        this.id = $node.attr('id');
-        this.label = $node.data('category');
+    constructor(node) {
+        this.elt = node;
+        this.id = node.id;
+        this.label = node.dataset.category;
     }
 
     get optionsContainer() {
-        return this.elt.find('.roro-select-category-options-container');
+        return RoroDom.qs(this.elt, '.roro-select-category-options-container');
     }
 }
 
@@ -65,6 +77,7 @@ class Selectable extends Input {
     }
 
     init() {
+        if (!this.elt) return this;   // element vanished before init (null-safe, like jQuery)
         this._initializing = true;
         this.readDom();
         this.bindBaseEvents();
@@ -79,15 +92,15 @@ class Selectable extends Input {
     // silent during the initial population so handlers don't run on load.
     emitChange() {
         if (this._initializing) return;
-        if (this.elt) this.elt.trigger('roro:change', [this.getValue()]);
+        if (this.elt) RoroDom.emit(this.elt, 'roro:change', this.getValue());
     }
 
     // Read the options + categories already rendered server-side in the dropdown.
     readDom() {
-        this.categories = this.dropdown.find('.roro-select-category').get()
-            .map(node => new RoroCategory($(node)));
-        this.options = this.dropdown.find('.roro-select-option').get()
-            .map(node => new RoroOption($(node)));
+        this.categories = RoroDom.qsa(this.dropdown, '.roro-select-category')
+            .map(node => new RoroCategory(node));
+        this.options = RoroDom.qsa(this.dropdown, '.roro-select-option')
+            .map(node => new RoroOption(node));
         this.options.forEach(option => option.bindClick(this));
     }
 
@@ -103,16 +116,17 @@ class Selectable extends Input {
      * ---------- Dynamic add (client-side clone, no request) ----------
      */
     addOption(label, value, categoryLabel = null) {
-        const $option = this.templates.children('.roro-select-option').clone();
-        $option.attr('id', Selectable.uid('roro-select-option'));
-        $option.attr('data-value', value).data('value', value);
-        $option.attr('data-label', label).data('label', label);
-        $option.find('.roro-select-option-label').text(label);
+        const optionEl = RoroDom.children(this.templates, '.roro-select-option')[0].cloneNode(true);
+        optionEl.id = Selectable.uid('roro-select-option');
+        optionEl.dataset.value = value;
+        optionEl.dataset.label = label;
+        const labelEl = RoroDom.qs(optionEl, '.roro-select-option-label');
+        if (labelEl) labelEl.textContent = label;
 
         const container = categoryLabel ? this.ensureCategory(categoryLabel).optionsContainer : this.dropdown;
-        container.append($option);
+        container.appendChild(optionEl);
 
-        const option = new RoroOption($option);
+        const option = new RoroOption(optionEl);
         option.bindClick(this);
         this.options.push(option);
         return option;
@@ -122,13 +136,14 @@ class Selectable extends Input {
         const existing = this.categories.find(c => c.label === categoryLabel);
         if (existing) return existing;
 
-        const $cat = this.templates.children('.roro-select-category').clone();
-        $cat.attr('id', Selectable.uid('roro-select-category'));
-        $cat.attr('data-category', categoryLabel).data('category', categoryLabel);
-        $cat.find('.roro-select-category-label').text(categoryLabel);
-        this.dropdown.append($cat);
+        const catEl = RoroDom.children(this.templates, '.roro-select-category')[0].cloneNode(true);
+        catEl.id = Selectable.uid('roro-select-category');
+        catEl.dataset.category = categoryLabel;
+        const labelEl = RoroDom.qs(catEl, '.roro-select-category-label');
+        if (labelEl) labelEl.textContent = categoryLabel;
+        this.dropdown.appendChild(catEl);
 
-        const category = new RoroCategory($cat);
+        const category = new RoroCategory(catEl);
         this.categories.push(category);
         return category;
     }
@@ -151,73 +166,75 @@ class Selectable extends Input {
     }
 
     showFilteredOptions() {
-        const text = this.textInput.val() || this.textInput.text();
+        const text = this.textInput.value || this.textInput.textContent;
         if (!text) {
-            this.options.forEach(o => o.elt.show());
+            this.options.forEach(o => RoroDom.show(o.elt));
             return;
         }
-        this.options.forEach(o => o.elt.hide());
-        this.optionsFiltered.forEach(o => o.elt.show());
+        this.options.forEach(o => RoroDom.hide(o.elt));
+        this.optionsFiltered.forEach(o => RoroDom.show(o.elt));
     }
 
     /**
      * ---------- State ----------
      */
-    isDisabled() { return this.elt.data('disable'); }
-    isReadonly() { return this.elt.data('readonly'); }
+    isDisabled() { return boolData(this.elt, 'disable'); }
+    isReadonly() { return boolData(this.elt, 'readonly'); }
 
     handleDisableReadonly() {
-        if (this.elt.data('disable')) {
+        if (boolData(this.elt, 'disable')) {
             this.disable(true);
         } else {
             this.disable(false);
-            this.readonly(!!this.elt.data('readonly'));
+            this.readonly(boolData(this.elt, 'readonly'));
         }
     }
 
     disable(disable = true) {
-        this.elt.css({ 'pointer-events': disable ? 'none' : 'auto' });
-        this.elt.data('disable', disable);
-        this.textInput.prop('disabled', disable);
-        this.elt.find('.roro-input-hidden').prop('disabled', disable);
+        this.elt.style.pointerEvents = disable ? 'none' : 'auto';
+        this.elt.dataset.disable = disable ? '1' : '0';
+        if (this.textInput) this.textInput.disabled = disable;
+        RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.disabled = disable; });
     }
 
     readonly(readonly = true) {
-        this.elt.css({ 'pointer-events': readonly ? 'none' : 'auto' });
-        this.elt.data('readonly', readonly);
-        this.textInput.prop('readonly', readonly);
-        this.elt.find('.roro-input-hidden').prop('readonly', readonly);
+        this.elt.style.pointerEvents = readonly ? 'none' : 'auto';
+        this.elt.dataset.readonly = readonly ? '1' : '0';
+        if (this.textInput) this.textInput.readOnly = readonly;
+        RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.readOnly = readonly; });
     }
 
     /**
      * ---------- Dropdown (memoized DOM refs) ----------
      */
-    get selectWrapper() { return (this._selectWrapper ??= $('#' + this.id)); }
-    get dropdown() { return (this._dropdown ??= this.selectWrapper.find('.roro-select-dropdown')); }
-    get templates() { return (this._templates ??= this.selectWrapper.find('.roro-select-templates')); }
-    get textInput() { return (this._textInput ??= this.elt.find('.roro-select-text-input')); }
+    get selectWrapper() { return (this._selectWrapper ??= document.getElementById(this.id)); }
+    get dropdown() { return (this._dropdown ??= RoroDom.qs(this.selectWrapper, '.roro-select-dropdown')); }
+    get templates() { return (this._templates ??= RoroDom.qs(this.selectWrapper, '.roro-select-templates')); }
+    get textInput() { return (this._textInput ??= RoroDom.qs(this.elt, '.roro-select-text-input')); }
 
     showDropDown(show) {
-        if (show !== undefined) this.selectWrapper.data('show', show);
-        this.selectWrapper.data('show') ? this.dropdown.slideDown() : this.dropdown.slideUp();
+        if (show !== undefined) this.selectWrapper.dataset.show = show ? '1' : '0';
+        if (boolData(this.selectWrapper, 'show')) RoroDom.show(this.dropdown);
+        else RoroDom.hide(this.dropdown);
     }
 
     toggleDropDown() {
-        roroShowDropDown(this.id.replace('roro-wrapper-', ''), !this.selectWrapper.data('show'));
+        roroShowDropDown(this.id.replace('roro-wrapper-', ''), !boolData(this.selectWrapper, 'show'));
     }
 
     /**
      * ---------- Events ----------
      */
     bindBaseEvents() {
-        this.textInput.on('input', () => {
-            this.filterOptions(this.textInput.val() + this.textInput.text());
+        RoroDom.on(this.textInput, 'input', () => {
+            this.filterOptions((this.textInput.value || '') + (this.textInput.textContent || ''));
             this.showFilteredOptions();
         });
 
-        this.selectWrapper.on('click', () => this.toggleDropDown());
+        RoroDom.on(this.selectWrapper, 'click', () => this.toggleDropDown());
 
-        this.elt.find('.roro-select-clear-button').on('click', ev => {
+        const clearBtn = RoroDom.qs(this.elt, '.roro-select-clear-button');
+        RoroDom.on(clearBtn, 'click', ev => {
             ev.stopPropagation();
             this.clearInput();
         });
@@ -227,7 +244,7 @@ class Selectable extends Input {
      * ---------- Helpers ----------
      */
     setTextInputValue(value) {
-        this.textInput.val(value);
+        this.textInput.value = value;
     }
 
     resetOptionMarkers() {
@@ -299,13 +316,16 @@ class Select extends Selectable {
     }
 
     setHiddenValue(value) {
-        const $h = this.elt.find('.roro-select-hidden');
-        if ($h.length) {
-            $h.val(value);
+        let h = RoroDom.qs(this.elt, '.roro-select-hidden');
+        if (h) {
+            h.value = value;
         } else {
-            $('<input>', { type: 'hidden', class: 'roro-select-hidden', name: this.id })
-                .val(value)
-                .appendTo(this.elt);
+            h = document.createElement('input');
+            h.type = 'hidden';
+            h.className = 'roro-select-hidden';
+            h.setAttribute('name', this.id);
+            h.value = value;
+            this.elt.appendChild(h);
         }
         this.emitChange();
     }
@@ -337,26 +357,32 @@ class MultiSelect extends Selectable {
     actualize() {
         this.listTag = [];
         this.resetOptionMarkers();
-        this.textInput.html('');
+        this.textInput.innerHTML = '';
 
         this.options
             .filter(option => this.values.includes(option.value))
             .forEach(option => {
-                // Clone the tag from the cached template.
-                const $tag = this.templates.children('.tag, .caret-zone').clone();
+                // Clone the tag (+ caret zone) from the cached template.
+                const tagNodes = RoroDom.children(this.templates, '.tag, .caret-zone')
+                    .map(n => n.cloneNode(true));
                 const tagId = Selectable.uid('roro-tag');
-                const $tagSpan = $tag.filter('.tag');
+                const tagSpan = tagNodes.find(n => n.matches('.tag'));
 
-                $tagSpan.attr('id', tagId).data('value', option.value);
-                $tagSpan.find('.roro-multi-select-text-tag-text').text(option.label);
-                $tag.appendTo(this.textInput);
+                if (tagSpan) {
+                    tagSpan.id = tagId;
+                    tagSpan.dataset.value = option.value;
+                    const txt = RoroDom.qs(tagSpan, '.roro-multi-select-text-tag-text');
+                    if (txt) txt.textContent = option.label;
+                }
 
+                tagNodes.forEach(n => this.textInput.appendChild(n));
                 option.mark();
-                this.listTag.push({ id: tagId, value: option.value, elt: $tag });
+                this.listTag.push({ id: tagId, value: option.value, elt: tagNodes });
 
-                $tagSpan.find('.roro-multi-select-text-tag-clear-button').on('click', () => {
-                    this.toggleOption(option.value);
-                });
+                if (tagSpan) {
+                    const clearBtn = RoroDom.qs(tagSpan, '.roro-multi-select-text-tag-clear-button');
+                    RoroDom.on(clearBtn, 'click', () => this.toggleOption(option.value));
+                }
             });
     }
 
@@ -383,13 +409,17 @@ class MultiSelect extends Selectable {
     }
 
     setHiddenValue(values) {
-        this.elt.find('.roro-multi-select-hidden').remove();
+        RoroDom.qsa(this.elt, '.roro-multi-select-hidden').forEach(h => h.remove());
         if (!Array.isArray(values)) values = [];
         values.forEach(v => {
-            const $input = $('<input>', { type: 'hidden', class: 'roro-multi-select-hidden', name: this.name }).val(v);
-            if (this.isDisabled()) $input.attr('disabled', true);
-            if (this.isReadonly()) $input.attr('readonly', true);
-            $input.appendTo(this.elt);
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.className = 'roro-multi-select-hidden';
+            input.setAttribute('name', this.name);
+            input.value = v;
+            if (this.isDisabled()) input.disabled = true;
+            if (this.isReadonly()) input.readOnly = true;
+            this.elt.appendChild(input);
         });
         this.emitChange();
     }
@@ -403,8 +433,8 @@ class MultiSelect extends Selectable {
         // Only the live caret-zones inside the text input carry typed text; the
         // .roro-select-templates copy is empty and would inject an '' needle that
         // matches every option.
-        this.textInput.find('.caret-zone').each(function () {
-            needles.push($(this).text().toLowerCase().trim());
+        RoroDom.qsa(this.textInput, '.caret-zone').forEach(function (el) {
+            needles.push((el.textContent || '').toLowerCase().trim());
         });
         this.optionsFiltered = this.options.filter(option =>
             needles.some(needle => (option.label ?? '').toLowerCase().trim().includes(needle))
@@ -415,9 +445,9 @@ class MultiSelect extends Selectable {
         super.bindBaseEvents();
 
         // Backspace removes a tag: the tag disappears from the DOM, so drop its value.
-        this.textInput.on('input', () => {
+        RoroDom.on(this.textInput, 'input', () => {
             this.listTag = this.listTag.filter(tag => {
-                if (!this.textInput.find('#' + tag.id).length) {
+                if (!this.textInput.querySelector('#' + tag.id)) {
                     this.toggleOption(tag.value);
                     return false;
                 }

@@ -1,21 +1,21 @@
 /**
- * RoroForm facade — a chainable, type-aware wrapper over the existing
- * window.roro* primitives. Everything here is additive: every legacy global
- * stays exactly as it was.
+ * RoroForm facade — a chainable, type-aware wrapper over the runtime
+ * primitives. Everything here is additive: every legacy global stays as it was.
  *
  *   roro('email').value('john@x.com').required().focus();
  *   roro('country').addOption('France', 'fr').value('fr');
  *   roro.form('signup').onSuccess(r => ...).fill(user).submit();
  *
- * The whole library is jQuery-based, so this layer is too.
+ * Dependency-free: it drives the DOM through window.RoroDom + native APIs.
+ * Element-returning accessors ($el/$control/$wrapper) return DOM Elements.
  */
 (function () {
-    const RORO_VERSION = '1.0.0';
+    const RORO_VERSION = '2.0.0';
 
     // ---- low-level resolvers -----------------------------------------------
 
-    function $byId(id) { return $('#' + id); }
-    function $wrapperOf(id) { return $('#roro-wrapper-' + id); }
+    function byId(id) { return id == null ? null : document.getElementById(id); }
+    function wrapperOf(id) { return id == null ? null : document.getElementById('roro-wrapper-' + id); }
 
     // CSS-attribute-selector safe value.
     function cssEsc(v) { return String(v == null ? '' : v).replace(/(["\\])/g, '\\$1'); }
@@ -26,30 +26,32 @@
         return strip(a) === strip(b);
     }
 
-    // Logical id from a string, a DOM node or a jQuery object.
+    // Logical id from a string or a DOM node.
     function toId(target) {
         if (target == null) return null;
         if (typeof target === 'string') return target.replace(/^#/, '');
-        const $t = target.jquery ? target : $(target);
-        if (!$t.length) return null;
-        if ($t.data('id')) return String($t.data('id'));
-        return ($t.attr('id') || '').replace(/^roro-wrapper-/, '');
+        if (target.nodeType !== 1) return null;
+        if (target.dataset && target.dataset.id) return String(target.dataset.id);
+        return (target.getAttribute('id') || '').replace(/^roro-wrapper-/, '');
     }
 
     function resolveType(id) {
-        const $w = $wrapperOf(id);
-        if ($w.hasClass('roro-wrapper-select')) return 'select';
-        if ($w.hasClass('roro-wrapper-multi-select')) return 'multi-select';
-        if ($w.hasClass('roro-wrapper-repeatable')) return 'repeatable';
+        const w = wrapperOf(id);
+        if (w) {
+            if (w.classList.contains('roro-wrapper-select')) return 'select';
+            if (w.classList.contains('roro-wrapper-multi-select')) return 'multi-select';
+            if (w.classList.contains('roro-wrapper-repeatable')) return 'repeatable';
+        }
 
-        const $el = $byId(id);
-        if ($el.is('form')) return 'form';
-        if ($el.hasClass('roro-input-checkbox')) return 'checkbox';
-        if ($el.hasClass('roro-input-radio')) return 'radio';
-        if ($el.hasClass('roro-input-file')) return 'file';
-        if ($el.is('textarea')) return 'textarea';
-        if ($el.is('select')) return 'native-select';
-        if ($el.is('input')) return ($el.attr('type') || 'text').toLowerCase();
+        const el = byId(id);
+        if (!el) return 'unknown';
+        if (el.tagName === 'FORM') return 'form';
+        if (el.classList.contains('roro-input-checkbox')) return 'checkbox';
+        if (el.classList.contains('roro-input-radio')) return 'radio';
+        if (el.classList.contains('roro-input-file')) return 'file';
+        if (el.tagName === 'TEXTAREA') return 'textarea';
+        if (el.tagName === 'SELECT') return 'native-select';
+        if (el.tagName === 'INPUT') return (el.getAttribute('type') || 'text').toLowerCase();
         return 'unknown';
     }
 
@@ -65,9 +67,9 @@
 
     // ---- form (de)serialization --------------------------------------------
 
-    function serializeForm($form) {
+    function serializeForm(form) {
         const out = {};
-        $form.serializeArray().forEach(({ name, value }) => {
+        RoroDom.serializeArray(form).forEach(({ name, value }) => {
             const isArray = name.endsWith('[]');
             const key = name.replace(/\[\]$/, '');
             if (isArray) {
@@ -81,60 +83,62 @@
         return out;
     }
 
-    function fillForm($form, data) {
+    function fillForm(form, data) {
+        if (!form) return;
         Object.keys(data).forEach(name => {
             const value = data[name];
 
             // Repeatable group (matched by its wrapper data-name).
-            const $rep = $form.find('.roro-wrapper-repeatable')
-                .filter((i, el) => nameEq($(el).data('name'), name));
-            if ($rep.length) { new RoroHandle(String($rep.data('id'))).value(value); return; }
+            const rep = RoroDom.qsa(form, '.roro-wrapper-repeatable').find(el => nameEq(el.dataset.name, name));
+            if (rep) { new RoroHandle(String(rep.dataset.id)).value(value); return; }
 
             // Custom multi-select (matched by its wrapper data-name).
-            const $ms = $form.find('.roro-wrapper-multi-select')
-                .filter((i, el) => nameEq($(el).data('name'), name));
-            if ($ms.length) { new RoroHandle(String($ms.data('id'))).value(value); return; }
+            const ms = RoroDom.qsa(form, '.roro-wrapper-multi-select').find(el => nameEq(el.dataset.name, name));
+            if (ms) { new RoroHandle(String(ms.dataset.id)).value(value); return; }
 
             // Custom single select (matched by its hidden input name).
-            const $sh = $form.find('.roro-select-hidden')
-                .filter((i, el) => nameEq($(el).attr('name'), name));
-            if ($sh.length) { new RoroHandle($sh.attr('id')).value(value); return; }
+            const sh = RoroDom.qsa(form, '.roro-select-hidden').find(el => nameEq(el.getAttribute('name'), name));
+            if (sh) { new RoroHandle(sh.id).value(value); return; }
 
             // Native fields, matched by name.
-            let $els = $form.find(`[name="${cssEsc(name)}"]`);
-            if (!$els.length) $els = $form.find(`[name="${cssEsc(name)}[]"]`);
+            let els = RoroDom.qsa(form, `[name="${cssEsc(name)}"]`);
+            if (!els.length) els = RoroDom.qsa(form, `[name="${cssEsc(name)}[]"]`);
 
             // Convenience fallback: treat the key as an element id.
-            if (!$els.length) {
-                if ($byId(name).length || $wrapperOf(name).length) new RoroHandle(name).value(value);
+            if (!els.length) {
+                if (byId(name) || wrapperOf(name)) new RoroHandle(name).value(value);
                 return;
             }
 
-            const type = ($els.attr('type') || '').toLowerCase();
+            const type = (els[0].getAttribute('type') || '').toLowerCase();
 
             if (type === 'checkbox') {
-                if ($els.length === 1) {
-                    $els.prop('checked', !!value);
+                if (els.length === 1) {
+                    els[0].checked = !!value;
                 } else {
                     const vals = (Array.isArray(value) ? value : [value]).map(String);
-                    $els.each(function () { $(this).prop('checked', vals.includes(String($(this).val()))); });
+                    els.forEach(el => { el.checked = vals.includes(String(el.value)); });
                 }
-                $els.trigger('change');
+                els.forEach(el => RoroDom.emit(el, 'change'));
                 return;
             }
 
             if (type === 'radio') {
-                $els.prop('checked', false).filter(`[value="${cssEsc(value)}"]`).prop('checked', true);
-                $els.trigger('change');
+                els.forEach(el => { el.checked = false; });
+                const match = els.find(el => String(el.value) === String(value));
+                if (match) match.checked = true;
+                els.forEach(el => RoroDom.emit(el, 'change'));
                 return;
             }
 
-            if (Array.isArray(value) && $els.length > 1) {
-                $els.each(function (i) { $(this).val(i < value.length ? value[i] : ''); });
+            // Text-like: spread an array across the matching [] inputs (one each),
+            // otherwise set the single value.
+            if (Array.isArray(value) && els.length > 1) {
+                els.forEach((el, i) => { el.value = i < value.length ? value[i] : ''; });
             } else {
-                $els.val(value);
+                els.forEach(el => { el.value = value; });
             }
-            $els.trigger('change');
+            els.forEach(el => RoroDom.emit(el, 'change'));
         });
     }
 
@@ -145,32 +149,35 @@
 
         // -- introspection --
         type() { return resolveType(this.id); }
-        exists() { return this.$el().length > 0 || this.$wrapper().length > 0; }
-        $el() { return $byId(this.id); }
-        el() { return this.$el()[0] || null; }
+        exists() { return !!(this.el() || this.wrapper()); }
+        el() { return byId(this.id); }
+        $el() { return this.el(); }
         select() { return getSelectInstance(this.id); }
         repeatable() { return getRepeatableInstance(this.id); }
 
-        // The primary interactive node (text input of a select, otherwise $el).
-        $control() {
+        // The primary interactive node (text input of a select, otherwise el).
+        control() {
             const t = this.type();
             if (t === 'select' || t === 'multi-select') {
-                return $wrapperOf(this.id).find('.roro-select-text-input');
+                return RoroDom.qs(wrapperOf(this.id), '.roro-select-text-input');
             }
-            return this.$el();
+            return this.el();
         }
+        $control() { return this.control(); }
 
-        $wrapper() {
+        wrapper() {
             const t = this.type();
-            if (t === 'select' || t === 'multi-select' || t === 'repeatable') return $wrapperOf(this.id);
+            if (t === 'select' || t === 'multi-select' || t === 'repeatable') return wrapperOf(this.id);
             return roroGetWrapper(this.id);
         }
+        $wrapper() { return this.wrapper(); }
 
         name() {
             const t = this.type();
-            if (t === 'multi-select') return $wrapperOf(this.id).data('name');
-            if (t === 'select') return $wrapperOf(this.id).find('.roro-select-hidden').attr('name');
-            return this.$el().attr('name');
+            if (t === 'multi-select') { const w = wrapperOf(this.id); return w ? w.dataset.name : null; }
+            if (t === 'select') { const h = RoroDom.qs(wrapperOf(this.id), '.roro-select-hidden'); return h ? h.getAttribute('name') : null; }
+            const el = this.el();
+            return el ? el.getAttribute('name') : null;
         }
 
         // -- value (type-aware get/set) --
@@ -194,17 +201,20 @@
                 return this;
             }
             if (t === 'checkbox') {
-                const $el = this.$el();
-                if (get) return $el.is(':checked');
-                $el.prop('checked', !!v).trigger('change');
+                const el = this.el();
+                if (get) return !!(el && el.checked);
+                if (el) { el.checked = !!v; RoroDom.emit(el, 'change'); }
                 return this;
             }
             if (t === 'radio') {
-                const name = this.$el().attr('name');
-                const $group = name ? $(`input[type=radio][name="${cssEsc(name)}"]`) : this.$el();
-                if (get) { const sel = $group.filter(':checked').val(); return sel === undefined ? null : sel; }
-                $group.prop('checked', false).filter(`[value="${cssEsc(v)}"]`).prop('checked', true);
-                $group.trigger('change');
+                const el = this.el();
+                const name = el ? el.getAttribute('name') : null;
+                const group = name ? RoroDom.qsa(`input[type=radio][name="${cssEsc(name)}"]`) : (el ? [el] : []);
+                if (get) { const sel = group.find(r => r.checked); return sel === undefined ? null : (sel ? sel.value : null); }
+                group.forEach(r => { r.checked = false; });
+                const match = group.find(r => String(r.value) === String(v));
+                if (match) match.checked = true;
+                group.forEach(r => RoroDom.emit(r, 'change'));
                 return this;
             }
             if (t === 'file') {
@@ -220,9 +230,9 @@
                 return this;
             }
 
-            const $el = this.$el();
-            if (get) return $el.val();
-            $el.val(v).trigger('change');
+            const el = this.el();
+            if (get) return el ? el.value : undefined;
+            if (el) { el.value = v; RoroDom.emit(el, 'change'); }
             return this;
         }
         val(v) { return this.value(v); }
@@ -231,18 +241,15 @@
             const t = this.type();
             if (t === 'repeatable') return this._withRepeatable(r => r.setValue([]));
             if (t === 'select' || t === 'multi-select') return this._withSelect(s => s.clearInput());
-            if (t === 'checkbox') { this.$el().prop('checked', false).trigger('change'); return this; }
+            if (t === 'checkbox') { const el = this.el(); if (el) { el.checked = false; RoroDom.emit(el, 'change'); } return this; }
             if (t === 'radio') {
-                const name = this.$el().attr('name');
-                $(`input[type=radio][name="${cssEsc(name)}"]`).prop('checked', false).trigger('change');
-                return this;
-            }
-            if (t === 'file') {
                 const el = this.el();
-                if (el) { el.value = ''; $(el).trigger('change'); }
+                const name = el ? el.getAttribute('name') : null;
+                if (name) RoroDom.qsa(`input[type=radio][name="${cssEsc(name)}"]`).forEach(r => { r.checked = false; RoroDom.emit(r, 'change'); });
                 return this;
             }
-            this.$el().val('').trigger('change');
+            if (t === 'file') { const el = this.el(); if (el) { el.value = ''; RoroDom.emit(el, 'change'); } return this; }
+            const el = this.el(); if (el) { el.value = ''; RoroDom.emit(el, 'change'); }
             return this;
         }
         reset() { return this.clear(); }
@@ -251,7 +258,7 @@
         disable(b = true) {
             const t = this.type();
             if (t === 'select' || t === 'multi-select') { roroDisableSelect(this.id, b); return this; }
-            this.$el().prop('disabled', !!b);
+            const el = this.el(); if (el) el.disabled = !!b;
             return this;
         }
         enable() { return this.disable(false); }
@@ -259,68 +266,72 @@
         readonly(b = true) {
             const t = this.type();
             if (t === 'select' || t === 'multi-select') { roroReadonlySelect(this.id, b); return this; }
-            this.$el().prop('readonly', !!b);
+            const el = this.el(); if (el) el.readOnly = !!b;
             return this;
         }
         editable() { return this.readonly(false); }
 
-        required(b = true) { this.$el().prop('required', !!b); return this; }
+        required(b = true) { const el = this.el(); if (el) el.required = !!b; return this; }
         optional() { return this.required(false); }
 
         isDisabled() {
             const s = this.select();
-            return s ? !!s.isDisabled() : !!this.$el().prop('disabled');
+            if (s) return !!s.isDisabled();
+            const el = this.el();
+            return !!(el && el.disabled);
         }
         isReadonly() {
             const s = this.select();
-            return s ? !!s.isReadonly() : !!this.$el().prop('readonly');
+            if (s) return !!s.isReadonly();
+            const el = this.el();
+            return !!(el && el.readOnly);
         }
-        isRequired() { return !!this.$el().prop('required'); }
+        isRequired() { const el = this.el(); return !!(el && el.required); }
 
         // -- visibility (wrapper level) --
-        show() { this.$wrapper().show(); return this; }
-        hide() { this.$wrapper().hide(); return this; }
-        toggle(b) { this.$wrapper().toggle(b); return this; }
-        isVisible() { return this.$wrapper().is(':visible'); }
+        show() { RoroDom.show(this.wrapper()); return this; }
+        hide() { RoroDom.hide(this.wrapper()); return this; }
+        toggle(b) { RoroDom.toggle(this.wrapper(), b); return this; }
+        isVisible() { return RoroDom.isVisible(this.wrapper()); }
 
         // -- error message --
         error(message = '') { roroShowError(this.id, message, true); return this; }
         clearError() { roroShowError(this.id, '', false); return this; }
 
         // -- focus --
-        focus() { this.$control().trigger('focus'); return this; }
-        blur() { this.$control().trigger('blur'); return this; }
+        focus() { const c = this.control(); if (c) c.focus(); return this; }
+        blur() { const c = this.control(); if (c) c.blur(); return this; }
 
         // -- meta --
         label(text) {
-            const $l = $('#label-' + this.id);
-            if (!$l.length) return text === undefined ? null : this;
+            const l = byId('label-' + this.id);
+            if (!l) return text === undefined ? null : this;
 
-            const node = Array.from($l[0].childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
-            if (text === undefined) return node ? node.textContent.trim() : $l.text().trim();
+            const node = Array.from(l.childNodes).find(n => n.nodeType === 3 && n.textContent.trim());
+            if (text === undefined) return node ? node.textContent.trim() : l.textContent.trim();
 
             if (node) node.textContent = text + ' ';
-            else $l.prepend(document.createTextNode(text + ' '));
+            else l.insertBefore(document.createTextNode(text + ' '), l.firstChild);
             return this;
         }
         placeholder(text) {
-            const $c = this.$control();
-            if (text === undefined) return $c.attr('placeholder');
-            $c.attr('placeholder', text);
+            const c = this.control();
+            if (text === undefined) return c ? c.getAttribute('placeholder') : undefined;
+            if (c) c.setAttribute('placeholder', text);
             return this;
         }
 
         // -- events --
-        on(events, fn) { this.$control().on(events, fn); return this; }
-        off(events, fn) { this.$control().off(events, fn); return this; }
-        trigger(event, extra) { this.$control().trigger(event, extra); return this; }
+        on(events, fn) { RoroDom.on(this.control(), events, fn); return this; }
+        off(events, fn) { RoroDom.off(this.control(), events, fn); return this; }
+        trigger(event, detail) { RoroDom.emit(this.control(), event, detail); return this; }
         change(fn) {
             const t = this.type();
             if (t === 'select' || t === 'multi-select' || t === 'repeatable') {
-                $wrapperOf(this.id).on('roro:change', (e, val) => fn(val, e));
+                RoroDom.on(wrapperOf(this.id), 'roro:change', (e) => fn(e.detail, e));
                 return this;
             }
-            this.$control().on('change', fn);
+            RoroDom.on(this.control(), 'change', fn);
             return this;
         }
         input(fn) { return this.on('input', fn); }
@@ -328,18 +339,24 @@
 
         // -- attribute / class pass-through --
         attr(name, val) {
-            if (val === undefined && typeof name !== 'object') return this.$el().attr(name);
-            this.$el().attr(name, val);
+            const el = this.el();
+            if (val === undefined && typeof name !== 'object') return el ? el.getAttribute(name) : undefined;
+            if (el) {
+                if (typeof name === 'object') Object.keys(name).forEach(k => el.setAttribute(k, name[k]));
+                else el.setAttribute(name, val);
+            }
             return this;
         }
         prop(name, val) {
-            if (val === undefined) return this.$el().prop(name);
-            this.$el().prop(name, val);
+            const el = this.el();
+            const key = name === 'readonly' ? 'readOnly' : name;
+            if (val === undefined) return el ? el[key] : undefined;
+            if (el) el[key] = val;
             return this;
         }
-        addClass(c) { this.$control().addClass(c); return this; }
-        removeClass(c) { this.$control().removeClass(c); return this; }
-        toggleClass(c, b) { this.$control().toggleClass(c, b); return this; }
+        addClass(c) { const el = this.control(); if (el) RoroDom.addClass(el, c); return this; }
+        removeClass(c) { const el = this.control(); if (el) RoroDom.removeClass(el, c); return this; }
+        toggleClass(c, b) { const el = this.control(); if (el) el.classList.toggle(c, b); return this; }
 
         // -- select-only (no-op on other types) --
         _withSelect(cb) {
@@ -398,10 +415,8 @@
         addRow(data = null) { return this._withRepeatable(r => r.addRow(data, false)); }
         removeRow(index) {
             return this._withRepeatable(r => {
-                const $row = (index && index.jquery)
-                    ? index
-                    : r.rowsContainer.children('.roro-repeatable-row').eq(parseInt(index, 10) || 0);
-                if ($row && $row.length) r.removeRow($row);
+                const row = (index instanceof Element) ? index : r.rows()[parseInt(index, 10) || 0];
+                if (row) r.removeRow(row);
             });
         }
         clearRows() { return this._withRepeatable(r => r.setValue([])); }
@@ -412,67 +427,67 @@
         // (stable); otherwise it's a position. Use rowAt()/rowWhere() to be explicit.
         row(target) {
             const r = this.repeatable();
-            return new RoroRepeatableRowHandle(r, r ? r.rowEl(target) : $());
+            return new RoroRepeatableRowHandle(r, r ? r.rowEl(target) : null);
         }
         rowAt(index) {
             const r = this.repeatable();
-            return new RoroRepeatableRowHandle(r, r ? r.rowAt(index) : $());
+            return new RoroRepeatableRowHandle(r, r ? r.rowAt(index) : null);
         }
         rowWhere(predicate) {
             const r = this.repeatable();
-            if (!r) return new RoroRepeatableRowHandle(null, $());
-            const el = r.rowsContainer.children('.roro-repeatable-row').toArray()
-                .find(el => { try { return predicate(r.readRow(el), $(el)); } catch (e) { return false; } });
-            return new RoroRepeatableRowHandle(r, el ? $(el) : $());
+            if (!r) return new RoroRepeatableRowHandle(null, null);
+            const el = r.rows().find(el => { try { return predicate(r.readRow(el), el); } catch (e) { return false; } });
+            return new RoroRepeatableRowHandle(r, el || null);
         }
         rowHandles() {
             const r = this.repeatable();
             if (!r) return [];
-            return r.rowsContainer.children('.roro-repeatable-row').toArray()
-                .map(el => new RoroRepeatableRowHandle(r, $(el)));
+            return r.rows().map(el => new RoroRepeatableRowHandle(r, el));
         }
     }
 
     // ---- repeatable row handle ---------------------------------------------
 
     class RoroRepeatableRowHandle {
-        constructor(repeatable, $row) { this.r = repeatable; this.$row = $row; }
+        constructor(repeatable, row) { this.r = repeatable; this.row = row; }
 
-        $el() { return this.$row; }
-        exists() { return !!(this.$row && this.$row.length); }
-        index() { return this.exists() ? this.$row.index() : -1; }
-        key() { return this.exists() && this.r ? this.r.rowKey(this.$row) : undefined; }
+        el() { return this.row; }
+        $el() { return this.row; }
+        exists() { return !!this.row; }
+        index() { return this.exists() ? RoroDom.index(this.row) : -1; }
+        key() { return this.exists() && this.r ? this.r.rowKey(this.row) : undefined; }
 
         // Drive one field of this row by its blueprint name -> a full RoroHandle.
-        field(name) { return new RoroHandle(this.r ? this.r.rowFieldId(this.$row, name) : null); }
+        field(name) { return new RoroHandle(this.r ? this.r.rowFieldId(this.row, name) : null); }
         fields() {
             if (!this.exists()) return [];
-            return roro.all(this.$row);
+            return roro.all(this.row);
         }
 
         value(data) {
             if (!this.exists()) return data === undefined ? null : this;
-            if (data === undefined) return this.r.readRow(this.$row[0]);
+            if (data === undefined) return this.r.readRow(this.row);
             if (data === null || typeof data !== 'object') {
-                const $single = this.$row.find('.roro-repeatable-row-content :input[name]').first();
-                if ($single.length) new RoroHandle($single.attr('id')).value(data);
+                const content = RoroDom.qs(this.row, '.roro-repeatable-row-content');
+                const single = content ? RoroDom.qsa(content, 'input[name], select[name], textarea[name]')[0] : null;
+                if (single) new RoroHandle(single.id).value(data);
                 return this;
             }
             Object.keys(data).forEach(k => this.field(k).value(data[k]));
             return this;
         }
 
-        remove() { if (this.exists()) this.r.removeRow(this.$row); return this; }
-        lockRemoval(b = true) { if (this.exists()) this.r.lockRow(this.$row, b); return this; }
+        remove() { if (this.exists()) this.r.removeRow(this.row); return this; }
+        lockRemoval(b = true) { if (this.exists()) this.r.lockRow(this.row, b); return this; }
         allowRemoval() { return this.lockRemoval(false); }
-        isRemovable() { return this.exists() && !this.r.isRowLocked(this.$row)
+        isRemovable() { return this.exists() && !this.r.isRowLocked(this.row)
             && this.r.count() > this.r.min; }
 
-        disable(b = true) { if (this.exists()) this.r.disableRow(this.$row, b); return this; }
+        disable(b = true) { if (this.exists()) this.r.disableRow(this.row, b); return this; }
         enable() { return this.disable(false); }
 
-        moveUp() { if (this.exists()) this.r.moveRow(this.$row, -1); return this; }
-        moveDown() { if (this.exists()) this.r.moveRow(this.$row, 1); return this; }
+        moveUp() { if (this.exists()) this.r.moveRow(this.row, -1); return this; }
+        moveDown() { if (this.exists()) this.r.moveRow(this.row, 1); return this; }
     }
 
     // ---- form handle -------------------------------------------------------
@@ -480,42 +495,41 @@
     class RoroFormHandle {
         constructor(id) { this.id = id; }
 
-        $el() { return $byId(this.id); }
-        el() { return this.$el()[0] || null; }
-        exists() { return this.$el().is('form'); }
+        el() { return byId(this.id); }
+        $el() { return this.el(); }
+        exists() { const el = this.el(); return !!(el && el.tagName === 'FORM'); }
 
         field(nameOrId) {
-            if ($byId(nameOrId).length || $wrapperOf(nameOrId).length) return new RoroHandle(nameOrId);
+            if (byId(nameOrId) || wrapperOf(nameOrId)) return new RoroHandle(nameOrId);
 
-            const $f = this.$el();
-            const $rep = $f.find('.roro-wrapper-repeatable')
-                .filter((i, el) => nameEq($(el).data('name'), nameOrId));
-            if ($rep.length) return new RoroHandle(String($rep.data('id')));
+            const f = this.el();
+            if (!f) return new RoroHandle(nameOrId);
 
-            const $ms = $f.find('.roro-wrapper-multi-select')
-                .filter((i, el) => nameEq($(el).data('name'), nameOrId));
-            if ($ms.length) return new RoroHandle(String($ms.data('id')));
+            const rep = RoroDom.qsa(f, '.roro-wrapper-repeatable').find(el => nameEq(el.dataset.name, nameOrId));
+            if (rep) return new RoroHandle(String(rep.dataset.id));
 
-            const $sh = $f.find('.roro-select-hidden')
-                .filter((i, el) => nameEq($(el).attr('name'), nameOrId));
-            if ($sh.length) return new RoroHandle($sh.attr('id'));
+            const ms = RoroDom.qsa(f, '.roro-wrapper-multi-select').find(el => nameEq(el.dataset.name, nameOrId));
+            if (ms) return new RoroHandle(String(ms.dataset.id));
 
-            const $byName = $f.find(`[name="${cssEsc(nameOrId)}"], [name="${cssEsc(nameOrId)}[]"]`).first();
-            if ($byName.length) return new RoroHandle($byName.attr('id'));
+            const sh = RoroDom.qsa(f, '.roro-select-hidden').find(el => nameEq(el.getAttribute('name'), nameOrId));
+            if (sh) return new RoroHandle(sh.id);
+
+            const byName = RoroDom.qs(f, `[name="${cssEsc(nameOrId)}"], [name="${cssEsc(nameOrId)}[]"]`);
+            if (byName) return new RoroHandle(byName.id);
 
             return new RoroHandle(nameOrId);
         }
-        fields() { return roro.all(this.$el()); }
+        fields() { return roro.all(this.el()); }
 
-        data() { return serializeForm(this.$el()); }
+        data() { return serializeForm(this.el()); }
         serialize() { return this.data(); }
-        fill(data) { fillForm(this.$el(), data || {}); return this; }
+        fill(data) { fillForm(this.el(), data || {}); return this; }
 
         reset() {
             const el = this.el();
             if (el && el.reset) el.reset();
-            this.$el().find('.roro-wrapper-select, .roro-wrapper-multi-select').each((i, w) => {
-                const s = getSelectInstance($(w).data('id'));
+            RoroDom.qsa(el, '.roro-wrapper-select, .roro-wrapper-multi-select').forEach((w) => {
+                const s = getSelectInstance(w.dataset.id);
                 if (s) s.ready.then(() => s.clearInput());
             });
             return this;
@@ -523,9 +537,9 @@
         clear() { this.fields().forEach(h => h.clear()); return this; }
 
         submit() {
-            const $btn = this._submitButton();
-            if ($btn.length) {
-                roroSubmitButton($btn.attr('id'), this.id);
+            const btn = this._submitButton();
+            if (btn) {
+                roroSubmitButton(btn.id, this.id);
             } else {
                 const el = this.el();
                 if (el) el.requestSubmit ? el.requestSubmit() : el.submit();
@@ -533,16 +547,16 @@
             return this;
         }
         _submitButton() {
-            let $btn = $(`.roro-btn-submit[data-form-id="${cssEsc(this.id)}"]`);
-            if (!$btn.length) $btn = this.$el().find('.roro-btn-submit').first();
-            return $btn;
+            let btn = document.querySelector(`.roro-btn-submit[data-form-id="${cssEsc(this.id)}"]`);
+            if (!btn) { const el = this.el(); btn = el ? RoroDom.qs(el, '.roro-btn-submit') : null; }
+            return btn;
         }
 
         validate() { const el = this.el(); return el ? el.reportValidity() : false; }
         isValid() { const el = this.el(); return el ? el.checkValidity() : false; }
 
-        errors(obj) { populateFormErrors(this.$el(), obj || {}); return this; }
-        clearErrors() { clearFormErrors(this.$el()); return this; }
+        errors(obj) { populateFormErrors(this.el(), obj || {}); return this; }
+        clearErrors() { clearFormErrors(this.el()); return this; }
 
         disable(b = true) { this.fields().forEach(h => h.disable(b)); return this; }
         enable() { return this.disable(false); }
@@ -550,8 +564,12 @@
         overlay(b = true) { roroShowOverlay(b); return this; }
 
         on(event, fn) {
-            const map = { success: 'roro:ajax:success', error: 'roro:ajax:error' };
-            this.$el().on(map[event] || event, fn);
+            const el = this.el();
+            // success/error are aliases for the roro:ajax:* CustomEvents; the
+            // callback receives (payload, event) — payload is event.detail.
+            if (event === 'success') { RoroDom.on(el, 'roro:ajax:success', e => fn(e.detail, e)); return this; }
+            if (event === 'error') { RoroDom.on(el, 'roro:ajax:error', e => fn(e.detail, e)); return this; }
+            RoroDom.on(el, event, fn);
             return this;
         }
         onSuccess(fn) { return this.on('success', fn); }
@@ -562,7 +580,8 @@
 
     function roro(target) {
         const id = toId(target);
-        if (id && $byId(id).is('form')) return new RoroFormHandle(id);
+        const el = byId(id);
+        if (el && el.tagName === 'FORM') return new RoroFormHandle(id);
         return new RoroHandle(id);
     }
 
@@ -572,13 +591,13 @@
     roro.select = (target) => getSelectInstance(toId(target));
     roro.repeatable = (target) => getRepeatableInstance(toId(target));
     roro.exists = (target) => roro(target).exists();
-    roro.ready = (fn) => { $(fn); return roro; };
+    roro.ready = (fn) => { RoroDom.ready(fn); return roro; };
     roro.all = function (root) {
-        const $root = root ? $(root) : $(document);
+        root = root || document;
         const ids = new Set();
-        $root.find('.roro-input[id]').each(function () { ids.add($(this).attr('id')); });
-        $root.find('.roro-wrapper-select, .roro-wrapper-multi-select, .roro-wrapper-repeatable').each(function () {
-            const id = $(this).data('id');
+        RoroDom.qsa(root, '.roro-input[id]').forEach(el => ids.add(el.id));
+        RoroDom.qsa(root, '.roro-wrapper-select, .roro-wrapper-multi-select, .roro-wrapper-repeatable').forEach(el => {
+            const id = el.dataset.id;
             if (id != null) ids.add(String(id));
         });
         return Array.from(ids).map(id => new RoroHandle(id));

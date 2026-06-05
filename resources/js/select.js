@@ -27,7 +27,13 @@ window.roroAddOptionsAjax = function (inputId, url, params = {}) {
     const select = findSelect(inputId);
     if (!select) return Promise.resolve([]);
 
-    return Promise.all([select.ready, $.getJSON(url, params)]).then(([, options]) => {
+    const query = new URLSearchParams(params).toString();
+    const target = query ? url + (url.includes('?') ? '&' : '?') + query : url;
+
+    return Promise.all([
+        select.ready,
+        fetch(target, { headers: { Accept: 'application/json' } }).then(r => r.json()),
+    ]).then(([, options]) => {
         (options || []).forEach(opt => select.addOption(opt.label, opt.value, opt.category ?? null));
         return options || [];
     });
@@ -52,21 +58,23 @@ window.roroShowDropDown = function (inputId, show = true) {
 };
 
 window.addSelect = function (elt) {
-    listOfSelect.push(new RoroSelect(elt.data('id'), elt.data('value')));
+    listOfSelect.push(new RoroSelect(elt.dataset.id, elt.dataset.value));
 };
 
 window.addMultiSelect = function (elt) {
-    listOfSelect.push(new RoroMultiSelect(elt.data('id'), elt.data('name'), elt.data('values')));
+    let values = [];
+    try { values = elt.dataset.values ? JSON.parse(elt.dataset.values) : []; } catch (e) { values = []; }
+    listOfSelect.push(new RoroMultiSelect(elt.dataset.id, elt.dataset.name, values));
 };
 
-$(document).ready(function () {
+RoroDom.ready(function () {
     // Selects inside a repeatable row are registered by RoroRepeatable itself
     // (with regenerated ids), so skip them here to avoid double registration.
-    $('.roro-wrapper-select').each(function () {
-        if (!$(this).closest('.roro-repeatable-row').length) addSelect($(this));
+    RoroDom.qsa('.roro-wrapper-select').forEach(function (el) {
+        if (!el.closest('.roro-repeatable-row')) addSelect(el);
     });
 
-    $('.roro-wrapper-multi-select').each(function () {
-        if (!$(this).closest('.roro-repeatable-row').length) addMultiSelect($(this));
+    RoroDom.qsa('.roro-wrapper-multi-select').forEach(function (el) {
+        if (!el.closest('.roro-repeatable-row')) addMultiSelect(el);
     });
 });

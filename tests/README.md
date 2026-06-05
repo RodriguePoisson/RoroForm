@@ -5,7 +5,7 @@ RoroForm ships **two** test suites, because the package is two things at once:
 | Suite | Tooling | What it proves | Tests |
 |-------|---------|----------------|-------|
 | **PHP** | [Pest](https://pestphp.com) + [Orchestra Testbench](https://github.com/orchestral/testbench) | The Blade components render the right HTML and integrate with Laravel (`old()`, validation errors, CSRF, themes). | **423** |
-| **JS** | [Vitest](https://vitest.dev) + [jsdom](https://github.com/jsdom/jsdom) + jQuery | The browser runtime behaves correctly: the `roro()` facade, repeatable groups, selects. | **391** |
+| **JS** | [Vitest](https://vitest.dev) + [jsdom](https://github.com/jsdom/jsdom) | The browser runtime behaves correctly: the `roro()` facade, repeatable groups, selects. | **391** |
 
 **814 tests total.** The two suites are independent — the PHP suite tests what the *server* produces, the JS suite tests what the *browser runtime* does with it.
 
@@ -16,7 +16,7 @@ RoroForm ships **two** test suites, because the package is two things at once:
 ```bash
 # one-time install
 composer install        # PHP dev deps (Pest + Testbench)
-npm install             # JS dev deps (Vitest + jsdom + jQuery)
+npm install             # JS dev deps (Vitest + jsdom)
 
 # run everything
 composer test           # or: vendor/bin/pest          → the PHP suite
@@ -146,9 +146,10 @@ beforeAll(() => loadRoro());   // run once per file
 ```
 
 `loadRoro()`:
-1. binds jQuery as `window.$` on the jsdom window;
-2. reads every runtime source file **in dependency order** (the same order as `build.mjs` / the inline injection);
-3. concatenates them into a **single function scope** and runs it once.
+1. reads every runtime source file **in dependency order** (the same order as `build.mjs` / the inline injection);
+2. concatenates them into a **single function scope** and runs it once against the jsdom window.
+
+The runtime is **vanilla JavaScript** (no jQuery), so the loader binds nothing extra — tests drive the DOM with native APIs (`document.querySelector`, `element.value`, `dispatchEvent`, …).
 
 The single-scope trick matters: because every file shares one scope, each `class X extends Y` can see the classes declared before it, and every `window.X = X` persists on the jsdom window afterwards — so after `loadRoro()` you have `window.RoroRepeatable`, `window.RoroSelect`, `window.roro`, `window.addSelect`, `window.listOfSelect`, etc., all wired together just like in a real page.
 
@@ -200,9 +201,9 @@ it('serializes rows back to an array', async () => {
 });
 ```
 
-### Why these tests outlive the jQuery → vanilla rewrite
+### These tests carried the jQuery → vanilla migration
 
-They assert the **behavioural contract** — *given this DOM / these inputs, the value or markup is X* — not jQuery call sequences. When the runtime is rewritten in vanilla JS, the implementation changes but the contract must not, so the same tests are the safety net for the migration. Write the rewrite against a green suite and you know nothing silently broke.
+The runtime was rewritten from jQuery to dependency-free vanilla JS against this suite. The tests assert the **behavioural contract** — *given this DOM / these inputs, the value or markup is X* — not implementation call sequences, so they survived the rewrite: the implementation changed completely while the contract did not. A few public contracts that genuinely changed when jQuery was dropped were updated in lockstep (the `$el()`/`$control()`/`$wrapper()` accessors return DOM Elements; `roro:change` / `roro:ajax:*` carry their payload on `event.detail`). The green suite is what proved nothing silently broke.
 
 ---
 

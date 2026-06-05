@@ -22,6 +22,7 @@ const DIST = 'resources/js/dist';
 
 // IMPORTANT : ne pas renommer les fichiers de sortie (charges par nom dans les blades).
 const entries = [
+    { in: `${SRC}/Models/dom.js`, out: `${DIST}/dom.min.js` },
     { in: `${SRC}/Models/RoroElement.js`, out: `${DIST}/RoroElement.min.js` },
     { in: `${SRC}/Models/Input.js`, out: `${DIST}/Input.min.js` },
     { in: `${SRC}/global.js`, out: `${DIST}/global.min.js` },

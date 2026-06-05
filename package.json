@@ -10,7 +10,6 @@
     },
     "devDependencies": {
         "esbuild": "^0.24.0",
-        "jquery": "^3.7.1",
         "jsdom": "^25.0.1",
         "vitest": "^3.0.0"
     }

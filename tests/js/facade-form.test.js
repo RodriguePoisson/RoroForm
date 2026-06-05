@@ -107,9 +107,9 @@ describe('roro(formEl) returns a RoroFormHandle for <form> elements', () => {
         expect(h).toBeInstanceOf(window.RoroFormHandle);
     });
 
-    it('roro(jQueryObj) of a form returns a RoroFormHandle', () => {
-        const $f = window.$('#signup');
-        const h = window.roro($f);
+    it('roro(domElement) of a form element also returns a RoroFormHandle', () => {
+        const el = document.getElementById('signup');
+        const h = window.roro(el);
         expect(h).toBeInstanceOf(window.RoroFormHandle);
     });
 

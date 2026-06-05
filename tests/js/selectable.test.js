@@ -212,18 +212,18 @@ describe('RoroSelect — initValues with a matching value', () => {
     });
 
     it('updates the hidden input to the selected value', () => {
-        const hiddenVal = window.$('#roro-wrapper-sel .roro-select-hidden').val();
+        const hiddenVal = document.querySelector('#roro-wrapper-sel .roro-select-hidden').value;
         expect(hiddenVal).toBe('de');
     });
 
     it('updates the text input to the selected label', () => {
-        const textVal = window.$('#roro-wrapper-sel .roro-select-text-input').val();
+        const textVal = document.querySelector('#roro-wrapper-sel .roro-select-text-input').value;
         expect(textVal).toBe('Germany');
     });
 
     it('marks the selected option (check + overlay become visible)', () => {
-        const $opt = window.$('#roro-opt-de');
-        expect($opt.find('.roro-select-option-check').css('display')).not.toBe('none');
+        const checkEl = document.querySelector('#roro-opt-de .roro-select-option-check');
+        expect(checkEl.style.display).not.toBe('none');
     });
 });
 
@@ -245,12 +245,12 @@ describe('RoroSelect — initValues with an unknown value', () => {
     });
 
     it('empties the hidden input', () => {
-        const hiddenVal = window.$('#roro-wrapper-sel2 .roro-select-hidden').val();
+        const hiddenVal = document.querySelector('#roro-wrapper-sel2 .roro-select-hidden').value;
         expect(hiddenVal).toBe('');
     });
 
     it('empties the text input', () => {
-        const textVal = window.$('#roro-wrapper-sel2 .roro-select-text-input').val();
+        const textVal = document.querySelector('#roro-wrapper-sel2 .roro-select-text-input').value;
         expect(textVal).toBe('');
     });
 });
@@ -275,27 +275,27 @@ describe('RoroSelect — setOptionSelected after ready', () => {
 
     it('updates the hidden input', () => {
         inst.setOptionSelected('es');
-        const hiddenVal = window.$('#roro-wrapper-post .roro-select-hidden').val();
+        const hiddenVal = document.querySelector('#roro-wrapper-post .roro-select-hidden').value;
         expect(hiddenVal).toBe('es');
     });
 
     it('updates the text input to the label', () => {
         inst.setOptionSelected('es');
-        const textVal = window.$('#roro-wrapper-post .roro-select-text-input').val();
+        const textVal = document.querySelector('#roro-wrapper-post .roro-select-text-input').value;
         expect(textVal).toBe('Spain');
     });
 
     it('marks the newly selected option', () => {
         inst.setOptionSelected('es');
-        const $check = window.$('#roro-opt-es .roro-select-option-check');
-        expect($check.css('display')).not.toBe('none');
+        const checkEl = document.querySelector('#roro-opt-es .roro-select-option-check');
+        expect(checkEl.style.display).not.toBe('none');
     });
 
     it('unmarks previously selected options when a new one is selected', () => {
         inst.setOptionSelected('fr');
         inst.setOptionSelected('es');
-        const $frCheck = window.$('#roro-opt-fr .roro-select-option-check');
-        expect($frCheck.css('display')).toBe('none');
+        const frCheckEl = document.querySelector('#roro-opt-fr .roro-select-option-check');
+        expect(frCheckEl.style.display).toBe('none');
     });
 
     it('resets selection when called with null', () => {
@@ -332,12 +332,12 @@ describe('RoroSelect — clearInput', () => {
 
     it('empties the text input', () => {
         inst.clearInput();
-        expect(window.$('#roro-wrapper-clr .roro-select-text-input').val()).toBe('');
+        expect(document.querySelector('#roro-wrapper-clr .roro-select-text-input').value).toBe('');
     });
 
     it('empties the hidden input', () => {
         inst.clearInput();
-        expect(window.$('#roro-wrapper-clr .roro-select-hidden').val()).toBe('');
+        expect(document.querySelector('#roro-wrapper-clr .roro-select-hidden').value).toBe('');
     });
 });
 
@@ -370,7 +370,7 @@ describe('RoroSelect — emitChange', () => {
         setBody(selectFixture({ id: 'em1', value: 'fr', options: THREE_OPTIONS }));
         const events = [];
         // Listen before constructing so any premature event would be caught.
-        window.$('#roro-wrapper-em1').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-em1').addEventListener('roro:change', e => events.push(e.detail));
         const inst = new window.RoroSelect('em1', 'fr');
         await inst.ready;
         expect(events).toHaveLength(0);
@@ -382,7 +382,7 @@ describe('RoroSelect — emitChange', () => {
         await inst.ready;
 
         const events = [];
-        window.$('#roro-wrapper-em2').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-em2').addEventListener('roro:change', e => events.push(e.detail));
         inst.setOptionSelected('de');
 
         expect(events).toHaveLength(1);
@@ -395,7 +395,7 @@ describe('RoroSelect — emitChange', () => {
         await inst.ready;
 
         const events = [];
-        window.$('#roro-wrapper-em3').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-em3').addEventListener('roro:change', e => events.push(e.detail));
         inst.clearInput();
 
         expect(events).toHaveLength(1);
@@ -424,14 +424,14 @@ describe('RoroSelect — addOption without category', () => {
 
     it('appends the new option to the dropdown DOM', () => {
         inst.addOption('Italy', 'it');
-        const $opt = window.$('#roro-wrapper-ao .roro-select-dropdown .roro-select-option[data-value="it"]');
-        expect($opt.length).toBe(1);
+        const opts = document.querySelectorAll('#roro-wrapper-ao .roro-select-dropdown .roro-select-option[data-value="it"]');
+        expect(opts.length).toBe(1);
     });
 
     it('sets the correct label text on the new option', () => {
         inst.addOption('Italy', 'it');
-        const $opt = window.$('#roro-wrapper-ao .roro-select-dropdown .roro-select-option[data-value="it"]');
-        expect($opt.find('.roro-select-option-label').text()).toBe('Italy');
+        const optEl = document.querySelector('#roro-wrapper-ao .roro-select-dropdown .roro-select-option[data-value="it"]');
+        expect(optEl.querySelector('.roro-select-option-label').textContent).toBe('Italy');
     });
 
     it('makes the new option selectable via setOptionSelected', () => {
@@ -474,16 +474,16 @@ describe('RoroSelect — addOption with category', () => {
 
     it('places the option inside the category container', () => {
         inst.addOption('Italy', 'it', 'Europe');
-        const $cat = window.$('#roro-wrapper-cat .roro-select-category[data-category="Europe"]');
-        expect($cat.length).toBe(1);
-        const $opt = $cat.find('.roro-select-option[data-value="it"]');
-        expect($opt.length).toBe(1);
+        const catEl = document.querySelector('#roro-wrapper-cat .roro-select-category[data-category="Europe"]');
+        expect(catEl).not.toBeNull();
+        const optEl = catEl.querySelector('.roro-select-option[data-value="it"]');
+        expect(optEl).not.toBeNull();
     });
 
     it('sets the category label text in the DOM', () => {
         inst.addOption('Italy', 'it', 'Europe');
-        const $cat = window.$('#roro-wrapper-cat .roro-select-category[data-category="Europe"]');
-        expect($cat.find('.roro-select-category-label').text()).toBe('Europe');
+        const catEl = document.querySelector('#roro-wrapper-cat .roro-select-category[data-category="Europe"]');
+        expect(catEl.querySelector('.roro-select-category-label').textContent).toBe('Europe');
     });
 });
 
@@ -509,7 +509,7 @@ describe('RoroSelect — removeOption', () => {
     it('removes the option node from the DOM', () => {
         const opt = inst.options.find(o => o.value === 'fr');
         inst.removeOption(opt);
-        expect(window.$('#roro-opt-fr').length).toBe(0);
+        expect(document.getElementById('roro-opt-fr')).toBeNull();
     });
 
     it('the removed option is no longer in this.options', () => {
@@ -610,7 +610,7 @@ describe('RoroMultiSelect — initValues with no pre-selected values', () => {
     });
 
     it('renders no hidden inputs initially', () => {
-        const count = window.$('#roro-wrapper-ms2 .roro-multi-select-hidden').length;
+        const count = document.querySelectorAll('#roro-wrapper-ms2 .roro-multi-select-hidden').length;
         expect(count).toBe(0);
     });
 });
@@ -668,43 +668,42 @@ describe('RoroMultiSelect — setHiddenValue', () => {
 
     it('renders one hidden input per value', () => {
         inst.setHiddenValue(['fr', 'de']);
-        const $inputs = window.$('#roro-wrapper-hv .roro-multi-select-hidden');
-        expect($inputs.length).toBe(2);
+        const inputs = document.querySelectorAll('#roro-wrapper-hv .roro-multi-select-hidden');
+        expect(inputs.length).toBe(2);
     });
 
     it('each hidden input carries the right name', () => {
         inst.setHiddenValue(['fr']);
-        const $input = window.$('#roro-wrapper-hv .roro-multi-select-hidden');
-        expect($input.attr('name')).toBe('hv[]');
+        const input = document.querySelector('#roro-wrapper-hv .roro-multi-select-hidden');
+        expect(input.getAttribute('name')).toBe('hv[]');
     });
 
     it('each hidden input carries the right value', () => {
         inst.setHiddenValue(['fr', 'de']);
-        const vals = window.$('#roro-wrapper-hv .roro-multi-select-hidden')
-            .map(function () { return window.$(this).val(); })
-            .get();
+        const vals = Array.from(document.querySelectorAll('#roro-wrapper-hv .roro-multi-select-hidden'))
+            .map(el => el.value);
         expect(vals).toEqual(expect.arrayContaining(['fr', 'de']));
     });
 
     it('replaces previous hidden inputs on re-call', () => {
         inst.setHiddenValue(['fr', 'de']);
         inst.setHiddenValue(['es']);
-        const $inputs = window.$('#roro-wrapper-hv .roro-multi-select-hidden');
-        expect($inputs.length).toBe(1);
-        expect($inputs.val()).toBe('es');
+        const inputs = document.querySelectorAll('#roro-wrapper-hv .roro-multi-select-hidden');
+        expect(inputs.length).toBe(1);
+        expect(inputs[0].value).toBe('es');
     });
 
     it('removes all hidden inputs when called with an empty array', () => {
         inst.setHiddenValue(['fr']);
         inst.setHiddenValue([]);
-        const $inputs = window.$('#roro-wrapper-hv .roro-multi-select-hidden');
-        expect($inputs.length).toBe(0);
+        const inputs = document.querySelectorAll('#roro-wrapper-hv .roro-multi-select-hidden');
+        expect(inputs.length).toBe(0);
     });
 
     it('removes all hidden inputs when called with a non-array', () => {
         inst.setHiddenValue(['fr']);
         inst.setHiddenValue(null);
-        expect(window.$('#roro-wrapper-hv .roro-multi-select-hidden').length).toBe(0);
+        expect(document.querySelectorAll('#roro-wrapper-hv .roro-multi-select-hidden').length).toBe(0);
     });
 });
 
@@ -728,12 +727,12 @@ describe('RoroMultiSelect — clearInput', () => {
 
     it('removes all hidden inputs', () => {
         inst.clearInput();
-        expect(window.$('#roro-wrapper-mc .roro-multi-select-hidden').length).toBe(0);
+        expect(document.querySelectorAll('#roro-wrapper-mc .roro-multi-select-hidden').length).toBe(0);
     });
 
     it('removes all tags from the text input', () => {
         inst.clearInput();
-        expect(window.$('#roro-wrapper-mc .roro-select-text-input').html()).toBe('');
+        expect(document.querySelector('#roro-wrapper-mc .roro-select-text-input').innerHTML).toBe('');
     });
 });
 
@@ -753,41 +752,41 @@ describe('RoroMultiSelect — actualize', () => {
     it('renders one .tag span per selected value', () => {
         inst.toggleOption('fr');
         // actualize is called by toggleOption
-        const $tags = window.$('#roro-wrapper-act .roro-select-text-input .tag');
-        expect($tags.length).toBe(1);
+        const tags = document.querySelectorAll('#roro-wrapper-act .roro-select-text-input .tag');
+        expect(tags.length).toBe(1);
     });
 
     it('renders the correct label text in the tag', () => {
         inst.toggleOption('fr');
-        const tagText = window.$('#roro-wrapper-act .roro-select-text-input .roro-multi-select-text-tag-text').first().text();
-        expect(tagText).toBe('France');
+        const tagTextEl = document.querySelector('#roro-wrapper-act .roro-select-text-input .roro-multi-select-text-tag-text');
+        expect(tagTextEl.textContent).toBe('France');
     });
 
     it('renders multiple tags for multiple selected values', () => {
         inst.toggleOption('fr');
         inst.toggleOption('de');
-        const $tags = window.$('#roro-wrapper-act .roro-select-text-input .tag');
-        expect($tags.length).toBe(2);
+        const tags = document.querySelectorAll('#roro-wrapper-act .roro-select-text-input .tag');
+        expect(tags.length).toBe(2);
     });
 
     it('removes the tag for a de-selected value', () => {
         inst.toggleOption('fr');
         inst.toggleOption('fr'); // deselect
-        const $tags = window.$('#roro-wrapper-act .roro-select-text-input .tag');
-        expect($tags.length).toBe(0);
+        const tags = document.querySelectorAll('#roro-wrapper-act .roro-select-text-input .tag');
+        expect(tags.length).toBe(0);
     });
 
     it('marks the option node as selected when a value is toggled on', () => {
         inst.toggleOption('fr');
-        const $check = window.$('#roro-opt-fr .roro-select-option-check');
-        expect($check.css('display')).not.toBe('none');
+        const checkEl = document.querySelector('#roro-opt-fr .roro-select-option-check');
+        expect(checkEl.style.display).not.toBe('none');
     });
 
     it('unmarks the option node after deselection', () => {
         inst.toggleOption('fr');
         inst.toggleOption('fr');
-        const $check = window.$('#roro-opt-fr .roro-select-option-check');
-        expect($check.css('display')).toBe('none');
+        const checkEl = document.querySelector('#roro-opt-fr .roro-select-option-check');
+        expect(checkEl.style.display).toBe('none');
     });
 });
 
@@ -799,7 +798,7 @@ describe('RoroMultiSelect — emitChange', () => {
     it('does NOT fire roro:change during initial population', async () => {
         setBody(multiSelectFixture({ id: 'me1', options: THREE_OPTIONS, values: ['fr'] }));
         const events = [];
-        window.$('#roro-wrapper-me1').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-me1').addEventListener('roro:change', e => events.push(e.detail));
         const inst = new window.RoroMultiSelect('me1', 'me1[]', ['fr']);
         await inst.ready;
         // actualize() in the constructor's .then() runs after init, so only
@@ -813,7 +812,7 @@ describe('RoroMultiSelect — emitChange', () => {
         await inst.ready;
 
         const events = [];
-        window.$('#roro-wrapper-me2').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-me2').addEventListener('roro:change', e => events.push(e.detail));
         inst.toggleOption('fr');
 
         expect(events.length).toBeGreaterThanOrEqual(1);
@@ -827,7 +826,7 @@ describe('RoroMultiSelect — emitChange', () => {
         inst.toggleOption('fr');
 
         const events = [];
-        window.$('#roro-wrapper-me3').on('roro:change', (_, val) => events.push(val));
+        document.getElementById('roro-wrapper-me3').addEventListener('roro:change', e => events.push(e.detail));
         inst.clearInput();
 
         expect(events.length).toBeGreaterThanOrEqual(1);
@@ -906,7 +905,7 @@ describe('RoroSelect — disable', () => {
         const inst = new window.RoroSelect('dis', null);
         await inst.ready;
         inst.disable(true);
-        expect(window.$('#roro-wrapper-dis .roro-select-text-input').prop('disabled')).toBe(true);
+        expect(document.querySelector('#roro-wrapper-dis .roro-select-text-input').disabled).toBe(true);
     });
 
     it('re-enables the text input', async () => {
@@ -915,7 +914,7 @@ describe('RoroSelect — disable', () => {
         await inst.ready;
         inst.disable(true);
         inst.disable(false);
-        expect(window.$('#roro-wrapper-dis2 .roro-select-text-input').prop('disabled')).toBe(false);
+        expect(document.querySelector('#roro-wrapper-dis2 .roro-select-text-input').disabled).toBe(false);
     });
 });
 
@@ -925,7 +924,7 @@ describe('RoroSelect — readonly', () => {
         const inst = new window.RoroSelect('ro', null);
         await inst.ready;
         inst.readonly(true);
-        expect(window.$('#roro-wrapper-ro .roro-select-text-input').prop('readonly')).toBe(true);
+        expect(document.querySelector('#roro-wrapper-ro .roro-select-text-input').readOnly).toBe(true);
     });
 
     it('clears readonly flag when called with false', async () => {
@@ -934,7 +933,7 @@ describe('RoroSelect — readonly', () => {
         await inst.ready;
         inst.readonly(true);
         inst.readonly(false);
-        expect(window.$('#roro-wrapper-ro2 .roro-select-text-input').prop('readonly')).toBe(false);
+        expect(document.querySelector('#roro-wrapper-ro2 .roro-select-text-input').readOnly).toBe(false);
     });
 });
 
@@ -945,7 +944,7 @@ describe('RoroSelect — readonly', () => {
 describe('addSelect helper', () => {
     it('pushes a RoroSelect instance into window.listOfSelect', async () => {
         setBody(selectFixture({ id: 'as1', options: THREE_OPTIONS }));
-        window.addSelect(window.$('#roro-wrapper-as1'));
+        window.addSelect(document.getElementById('roro-wrapper-as1'));
         await tick();
         expect(window.listOfSelect.length).toBe(1);
         expect(window.listOfSelect[0]).toBeInstanceOf(window.RoroSelect);
@@ -953,7 +952,7 @@ describe('addSelect helper', () => {
 
     it('the registered instance has the correct id', async () => {
         setBody(selectFixture({ id: 'as2', options: THREE_OPTIONS }));
-        window.addSelect(window.$('#roro-wrapper-as2'));
+        window.addSelect(document.getElementById('roro-wrapper-as2'));
         await tick();
         expect(window.listOfSelect[0].id).toBe('roro-wrapper-as2');
     });
@@ -966,7 +965,7 @@ describe('addSelect helper', () => {
 describe('addMultiSelect helper', () => {
     it('pushes a RoroMultiSelect instance into window.listOfSelect', async () => {
         setBody(multiSelectFixture({ id: 'ams1', options: THREE_OPTIONS }));
-        window.addMultiSelect(window.$('#roro-wrapper-ams1'));
+        window.addMultiSelect(document.getElementById('roro-wrapper-ams1'));
         await tick();
         expect(window.listOfSelect.length).toBe(1);
         expect(window.listOfSelect[0]).toBeInstanceOf(window.RoroMultiSelect);

@@ -1,6 +1,7 @@
 /**
  * Minimal base: resolves a DOM element by its id. Elements are rendered
- * server-side, so there is no AJAX loading here.
+ * server-side, so there is no AJAX loading here. `this.elt` is a DOM Element
+ * (or null); subclasses use window.RoroDom + native APIs to drive it.
  */
 class RoroElement {
     constructor(eltType, id = null, prefixId = '') {
@@ -14,7 +15,7 @@ class RoroElement {
     async registerElement() {
         // Let the DOM settle, then resolve the element by its id.
         await new Promise(resolve => setTimeout(resolve, 0));
-        this.elt = $('#' + this.id);
+        this.elt = document.getElementById(this.id);
         this.registerEvents();
         return this;
     }

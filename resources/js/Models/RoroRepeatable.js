@@ -22,25 +22,28 @@ class RoroRepeatable extends RoroElement {
     }
 
     init() {
+        if (!this.elt) return this;   // element vanished before init (null-safe, like jQuery)
         this.wrapper = this.elt;
-        this.rowsContainer = this.wrapper.find('.roro-repeatable-rows').first();
-        this.addBtn = this.wrapper.find('.roro-repeatable-add').first();
-        this.blueprint = this.wrapper.find('.roro-repeatable-template').first().html() || '';
-        this.rowTemplate = this.wrapper.find('.roro-repeatable-row-template').first().html() || '';
+        this.rowsContainer = RoroDom.qs(this.wrapper, '.roro-repeatable-rows');
+        this.addBtn = RoroDom.qs(this.wrapper, '.roro-repeatable-add');
 
-        this.emptyEl = this.wrapper.find('.roro-repeatable-empty').first();
-        this.prefix = this.wrapper.attr('data-name') || '';
-        this.token = this.wrapper.attr('data-index-token') || '';
-        this.itemLabel = this.wrapper.attr('data-item-label') || '';
-        this.keyField = this.wrapper.attr('data-key-field') || '';
-        this.reorderEnabled = !!this.wrapper.attr('data-reorder');
-        this.dragEnabled = !!this.wrapper.attr('data-reorder-drag');
-        this.indexed = this.wrapper.attr('data-indexed') !== '0';
+        const blueprintEl = RoroDom.qs(this.wrapper, '.roro-repeatable-template');
+        this.blueprint = blueprintEl ? blueprintEl.innerHTML : '';
+        const rowTemplateEl = RoroDom.qs(this.wrapper, '.roro-repeatable-row-template');
+        this.rowTemplate = rowTemplateEl ? rowTemplateEl.innerHTML : '';
 
-        this.min = parseInt(this.wrapper.attr('data-min'), 10);
+        this.emptyEl = RoroDom.qs(this.wrapper, '.roro-repeatable-empty');
+        this.prefix = this.wrapper.getAttribute('data-name') || '';
+        this.token = this.wrapper.getAttribute('data-index-token') || '';
+        this.itemLabel = this.wrapper.getAttribute('data-item-label') || '';
+        this.keyField = this.wrapper.getAttribute('data-key-field') || '';
+        this.reorderEnabled = !!this.wrapper.getAttribute('data-reorder');
+        this.indexed = this.wrapper.getAttribute('data-indexed') !== '0';
+
+        this.min = parseInt(this.wrapper.getAttribute('data-min'), 10);
         if (isNaN(this.min)) this.min = 0;
-        const maxAttr = this.wrapper.attr('data-max');
-        this.max = (maxAttr === undefined || maxAttr === null || maxAttr === '') ? Infinity : parseInt(maxAttr, 10);
+        const maxAttr = this.wrapper.getAttribute('data-max');
+        this.max = (maxAttr === null || maxAttr === '') ? Infinity : parseInt(maxAttr, 10);
 
         this.nextIndex = 0;
 
@@ -49,14 +52,13 @@ class RoroRepeatable extends RoroElement {
         for (let i = 0; i < count; i++) this.addRow(data[i] || null, true);
 
         this.bindAdd();
-        if (this.dragEnabled) this.bindDragContainer();
         this.refreshControls();
         return this;
     }
 
     readRows() {
         try {
-            const raw = this.wrapper.attr('data-rows');
+            const raw = this.wrapper.getAttribute('data-rows');
             const parsed = raw ? JSON.parse(raw) : [];
             return Array.isArray(parsed) ? parsed : Object.values(parsed || {});
         } catch (e) {
@@ -65,7 +67,12 @@ class RoroRepeatable extends RoroElement {
     }
 
     count() {
-        return this.rowsContainer.children('.roro-repeatable-row').length;
+        return this.rows().length;
+    }
+
+    // The live row Elements (direct children of the rows container).
+    rows() {
+        return RoroDom.children(this.rowsContainer, '.roro-repeatable-row');
     }
 
     /**
@@ -75,46 +82,52 @@ class RoroRepeatable extends RoroElement {
         if (this.count() >= this.max) return null;
 
         const index = this.nextIndex++;
-        const $row = $(this.rowTemplate);
-        $row.attr('data-roro-index', index);   // stable per-row id for targeting
-        const $content = $row.find('.roro-repeatable-row-content').first();
-        $content.html(this.blueprint);
+        const row = RoroDom.fromHTML(this.rowTemplate);
+        row.setAttribute('data-roro-index', index);   // stable per-row id for targeting
+        const content = RoroDom.qs(row, '.roro-repeatable-row-content');
+        content.innerHTML = this.blueprint;
 
-        if (data) this.fillRow($content, data);
-        this.reindexRow($content, index);
+        if (data) this.fillRow(content, data);
+        this.reindexRow(content, index);
 
-        this.rowsContainer.append($row);   // attach before registering so ids resolve
-        this.registerNested($content);
-        this.bindRowControls($row);
-        if (this.dragEnabled) this.bindRowDrag($row);
+        this.rowsContainer.appendChild(row);   // attach before registering so ids resolve
+        this.registerNested(content);
+        this.bindRowControls(row);
 
         this.refreshControls();
         if (!isInit) this.emitChange();
-        return $row;
+        return row;
     }
 
-    removeRow($row) {
-        if (this.count() <= this.min || this.isRowLocked($row)) return;
-        $row.remove();
+    removeRow(row) {
+        if (this.count() <= this.min || this.isRowLocked(row)) return;
+        row.remove();
         this.refreshControls();
         this.emitChange();
     }
 
-    moveRow($row, dir) {
+    moveRow(row, dir) {
         if (!this.reorderEnabled) return;
         if (dir < 0) {
-            const $prev = $row.prev('.roro-repeatable-row');
-            if ($prev.length) $row.insertBefore($prev);
+            const prev = this.adjacentRow(row, 'previous');
+            if (prev) prev.parentNode.insertBefore(row, prev);
         } else {
-            const $next = $row.next('.roro-repeatable-row');
-            if ($next.length) $row.insertAfter($next);
+            const next = this.adjacentRow(row, 'next');
+            if (next) next.parentNode.insertBefore(row, next.nextSibling);
         }
         this.refreshControls();
         this.emitChange();
     }
 
+    adjacentRow(row, dir) {
+        const prop = dir === 'previous' ? 'previousElementSibling' : 'nextElementSibling';
+        let node = row[prop];
+        while (node && !node.matches('.roro-repeatable-row')) node = node[prop];
+        return node;
+    }
+
     clearRows() {
-        this.rowsContainer.children('.roro-repeatable-row').remove();
+        this.rows().forEach(row => row.remove());
         this.refreshControls();
     }
 
@@ -122,73 +135,78 @@ class RoroRepeatable extends RoroElement {
      * ---------- Per-row targeting & actions ----------
      */
     /**
-     * Resolve a single row. A jQuery row passes through. When a key-field is set,
-     * the target is treated as that row's KEY (stable across reorder/remove);
+     * Resolve a single row. A row Element passes through. When a key-field is
+     * set, the target is treated as that row's KEY (stable across reorder/remove);
      * otherwise a number is a position and anything else matches data-roro-index.
      * Use rowAt()/rowWhere() in the facade for explicit position/predicate lookups.
      */
     rowEl(target) {
-        if (target && target.jquery) return target;
-        const $rows = this.rowsContainer.children('.roro-repeatable-row');
+        if (target instanceof Element) return target;
+        const rows = this.rows();
         if (this.keyField) {
-            return $rows.filter((i, el) => String(this.rowKey($(el))) === String(target));
+            return rows.find(el => String(this.rowKey(el)) === String(target)) || null;
         }
-        if (typeof target === 'number') return $rows.eq(target);
-        return $rows.filter('[data-roro-index="' + RoroRepeatable.cssEsc(target) + '"]');
+        if (typeof target === 'number') return rows[target] || null;
+        return rows.find(el => el.getAttribute('data-roro-index') === String(target)) || null;
     }
 
     rowAt(index) {
-        return this.rowsContainer.children('.roro-repeatable-row').eq(index);
+        return this.rows()[index] || null;
     }
 
     // The current value of a row's key field (read live, so it survives edits/reorders).
-    rowKey($row) {
+    rowKey(row) {
         if (!this.keyField) return undefined;
-        const id = this.rowFieldId($row, this.keyField);
+        const id = this.rowFieldId(row, this.keyField);
         if (!id) return undefined;
         const inst = (window.listOfSelect || []).find(s => s.id === 'roro-wrapper-' + id);
-        return inst ? inst.getValue() : $('[id="' + RoroRepeatable.cssEsc(id) + '"]').val();
+        if (inst) return inst.getValue();
+        const el = document.getElementById(id);
+        return el ? el.value : undefined;
     }
 
     // Prevent (or re-allow) removing a row from the UI; the lock survives refreshes.
-    lockRow($row, locked = true) {
-        $row.attr('data-roro-locked', locked ? '1' : '0');
+    lockRow(row, locked = true) {
+        row.setAttribute('data-roro-locked', locked ? '1' : '0');
         this.refreshControls();
     }
 
-    isRowLocked($row) {
-        return $row.attr('data-roro-locked') === '1';
+    isRowLocked(row) {
+        return row.getAttribute('data-roro-locked') === '1';
     }
 
     // Disable/enable every field of a row (its add/remove controls stay managed).
-    disableRow($row, disable = true) {
-        const $fields = $row.find('.roro-repeatable-row-content');
-        $fields.find('input, textarea, select, button').prop('disabled', disable);
-        $row.find('.roro-wrapper-select, .roro-wrapper-multi-select').each(function () {
-            const inst = (window.listOfSelect || []).find(s => s.id === 'roro-wrapper-' + $(this).data('id'));
+    disableRow(row, disable = true) {
+        const content = RoroDom.qs(row, '.roro-repeatable-row-content');
+        if (content) {
+            RoroDom.qsa(content, 'input, textarea, select, button').forEach(el => { el.disabled = disable; });
+        }
+        RoroDom.qsa(row, '.roro-wrapper-select, .roro-wrapper-multi-select').forEach(function (w) {
+            const inst = (window.listOfSelect || []).find(s => s.id === 'roro-wrapper-' + w.dataset.id);
             if (inst) inst.ready.then(() => inst.disable(disable));
         });
-        $row.attr('data-roro-disabled', disable ? '1' : '0');
+        row.setAttribute('data-roro-disabled', disable ? '1' : '0');
     }
 
     // The element id (or custom-select wrapper id) of a field inside a row, by its
     // blueprint name — so a RoroHandle can drive a single field of a single row.
-    rowFieldId($row, name) {
-        const self = this;
+    rowFieldId(row, name) {
         let found = null;
-        $row.find('.roro-wrapper-select, .roro-wrapper-multi-select').each(function () {
-            const $w = $(this);
-            const base = $w.hasClass('roro-wrapper-multi-select')
-                ? RoroRepeatable.stripArray($w.attr('data-name'))
-                : $w.find('.roro-select-hidden').attr('name');
-            if (self.deindex(base) === name) { found = String($w.data('id')); return false; }
-        });
+
+        const wrappers = RoroDom.qsa(row, '.roro-wrapper-select, .roro-wrapper-multi-select');
+        for (const w of wrappers) {
+            const hidden = RoroDom.qs(w, '.roro-select-hidden');
+            const base = w.classList.contains('roro-wrapper-multi-select')
+                ? RoroRepeatable.stripArray(w.getAttribute('data-name'))
+                : (hidden ? hidden.getAttribute('name') : null);
+            if (this.deindex(base) === name) { found = String(w.dataset.id); break; }
+        }
         if (found) return found;
-        $row.find('[name]').each(function () {
-            const $el = $(this);
-            if ($el.closest('.roro-wrapper-select, .roro-wrapper-multi-select').length) return;
-            if (self.deindex($el.attr('name')) === name) { found = $el.attr('id'); return false; }
-        });
+
+        for (const el of RoroDom.qsa(row, '[name]')) {
+            if (el.closest('.roro-wrapper-select, .roro-wrapper-multi-select')) continue;
+            if (this.deindex(el.getAttribute('name')) === name) { found = el.id; break; }
+        }
         return found;
     }
 
@@ -196,28 +214,26 @@ class RoroRepeatable extends RoroElement {
      * ---------- Value (de)serialization ----------
      */
     getValue() {
-        return this.rowsContainer.children('.roro-repeatable-row').toArray().map(row => this.readRow(row));
+        return this.rows().map(row => this.readRow(row));
     }
 
     // Read one row's submitted data back into an object (or a scalar for flat lists).
     readRow(row) {
-        const self = this;
         const obj = {};
         let scalar;
         let isScalar = false;
-        $(row).find('[name]').each(function () {
-            const $i = $(this);
-            if ($i.is(':disabled')) return;
-            const type = ($i.attr('type') || '').toLowerCase();
-            if ((type === 'checkbox' || type === 'radio') && !$i.is(':checked')) return;
+        RoroDom.qsa(row, '[name]').forEach((i) => {
+            if (i.disabled) return;
+            const type = (i.getAttribute('type') || '').toLowerCase();
+            if ((type === 'checkbox' || type === 'radio') && !i.checked) return;
 
-            const base = self.deindex($i.attr('name'));
+            const base = this.deindex(i.getAttribute('name'));
             if (base === '') {            // flat scalar row: the field IS the row value
-                scalar = $i.val();
+                scalar = i.value;
                 isScalar = true;
                 return;
             }
-            RoroRepeatable.setPath(obj, self.namePath(base), $i.val(), /\[\]$/.test(base));
+            RoroRepeatable.setPath(obj, this.namePath(base), i.value, /\[\]$/.test(base));
         });
         return isScalar ? scalar : obj;
     }
@@ -233,59 +249,56 @@ class RoroRepeatable extends RoroElement {
      * ---------- Filling a freshly cloned row from a data object ----------
      *  Runs on base names (before reindexing), so it matches the blueprint.
      */
-    fillRow($content, data) {
+    fillRow(content, data) {
         const self = this;
 
         // Flat scalar row (e.g. tags[] => 'red'): the row has a single field.
         if (data !== null && typeof data !== 'object') {
-            const $single = $content.find('input, textarea, select').filter('[name]').first();
-            if ($single.length) {
-                if ($single.is('textarea')) $single.val(data).text(data);
-                else $single.attr('value', data).val(data);
+            const single = RoroDom.qsa(content, 'input, textarea, select').filter(el => el.hasAttribute('name'))[0];
+            if (single) {
+                if (single.tagName === 'TEXTAREA') { single.value = data; single.textContent = data; }
+                else { single.setAttribute('value', data); single.value = data; }
             }
             return;
         }
 
         // Custom single selects: seed the wrapper data-value (read at registration).
-        $content.find('.roro-wrapper-select').each(function () {
-            const $w = $(this);
-            const $hidden = $w.find('.roro-select-hidden').first();
-            const v = self.resolve(data, self.fillKey($hidden.attr('name')));
+        RoroDom.qsa(content, '.roro-wrapper-select').forEach(function (w) {
+            const hidden = RoroDom.qs(w, '.roro-select-hidden');
+            const v = self.resolve(data, self.fillKey(hidden ? hidden.getAttribute('name') : null));
             if (v !== undefined && v !== null) {
-                $w.attr('data-value', v);
-                $hidden.val(v);
+                w.setAttribute('data-value', v);
+                if (hidden) hidden.value = v;
             }
         });
 
         // Custom multi-selects: seed the wrapper data-values (JSON array).
-        $content.find('.roro-wrapper-multi-select').each(function () {
-            const $w = $(this);
-            let v = self.resolve(data, self.fillKey(RoroRepeatable.stripArray($w.attr('data-name'))));
+        RoroDom.qsa(content, '.roro-wrapper-multi-select').forEach(function (w) {
+            let v = self.resolve(data, self.fillKey(RoroRepeatable.stripArray(w.getAttribute('data-name'))));
             if (v === undefined || v === null) v = [];
             if (!Array.isArray(v)) v = [v];
-            $w.attr('data-values', JSON.stringify(v));
+            w.setAttribute('data-values', JSON.stringify(v));
         });
 
         // Native fields (skip anything owned by a custom select above).
-        $content.find('[name]').each(function () {
-            const $el = $(this);
-            if ($el.closest('.roro-wrapper-select, .roro-wrapper-multi-select').length) return;
+        RoroDom.qsa(content, '[name]').forEach(function (el) {
+            if (el.closest('.roro-wrapper-select, .roro-wrapper-multi-select')) return;
 
-            const v = self.resolve(data, self.fillKey($el.attr('name')));
+            const v = self.resolve(data, self.fillKey(el.getAttribute('name')));
             if (v === undefined) return;
 
-            const type = ($el.attr('type') || '').toLowerCase();
+            const type = (el.getAttribute('type') || '').toLowerCase();
             if (type === 'checkbox') {
-                const elVal = $el.attr('value');
-                if (Array.isArray(v)) $el.prop('checked', v.map(String).includes(String(elVal)));
-                else if (elVal !== undefined && elVal !== 'on') $el.prop('checked', String(v) === String(elVal));
-                else $el.prop('checked', !!v && v !== '0');
+                const elVal = el.getAttribute('value');
+                if (Array.isArray(v)) el.checked = v.map(String).includes(String(elVal));
+                else if (elVal !== null && elVal !== 'on') el.checked = String(v) === String(elVal);
+                else el.checked = !!v && v !== '0';
             } else if (type === 'radio') {
-                $el.prop('checked', String($el.attr('value')) === String(v));
-            } else if ($el.is('textarea')) {
-                $el.val(v).text(v);
+                el.checked = String(el.getAttribute('value')) === String(v);
+            } else if (el.tagName === 'TEXTAREA') {
+                el.value = v; el.textContent = v;
             } else {
-                $el.attr('value', v).val(v);
+                el.setAttribute('value', v); el.value = v;
             }
         });
     }
@@ -332,25 +345,22 @@ class RoroRepeatable extends RoroElement {
     /**
      * ---------- Reindexing a cloned row ----------
      */
-    reindexRow($content, index) {
-        this.reindexNames($content, index);
-        this.reindexIds($content, '-' + index);
+    reindexRow(content, index) {
+        this.reindexNames(content, index);
+        this.reindexIds(content, '-' + index);
     }
 
-    reindexNames($content, index) {
-        const self = this;
-        $content.find('[name]').each(function () {
-            const $el = $(this);
-            if ($el.attr('data-roro-skip-index') !== undefined) return;
-            const name = $el.attr('name');
-            if (name) $el.attr('name', self.indexName(name, index));
+    reindexNames(content, index) {
+        RoroDom.qsa(content, '[name]').forEach((el) => {
+            if (el.hasAttribute('data-roro-skip-index')) return;
+            const name = el.getAttribute('name');
+            if (name) el.setAttribute('name', this.indexName(name, index));
         });
 
         // Multi-selects submit through runtime hidden inputs named after data-name.
-        $content.find('.roro-wrapper-multi-select').each(function () {
-            const $w = $(this);
-            const dn = $w.attr('data-name');
-            if (dn) $w.attr('data-name', self.indexName(dn, index));
+        RoroDom.qsa(content, '.roro-wrapper-multi-select').forEach((w) => {
+            const dn = w.getAttribute('data-name');
+            if (dn) w.setAttribute('data-name', this.indexName(dn, index));
         });
     }
 
@@ -363,13 +373,11 @@ class RoroRepeatable extends RoroElement {
         return this.prefix + '[' + index + ']' + RoroRepeatable.bracketize(name);
     }
 
-    reindexIds($content, suffix) {
+    reindexIds(content, suffix) {
         const logical = new Set();
-        $content.find('[data-id]').each(function () {
-            logical.add(String($(this).attr('data-id')));
-        });
-        $content.find('[id]').each(function () {
-            const id = $(this).attr('id');
+        RoroDom.qsa(content, '[data-id]').forEach(el => logical.add(String(el.getAttribute('data-id'))));
+        RoroDom.qsa(content, '[id]').forEach(el => {
+            const id = el.getAttribute('id');
             if (id.indexOf('roro-wrapper-') === 0 || id.indexOf('label-') === 0) return;
             logical.add(id);
         });
@@ -377,11 +385,11 @@ class RoroRepeatable extends RoroElement {
         logical.forEach(L => {
             const nL = L + suffix;
             const e = RoroRepeatable.cssEsc(L);
-            $content.find('[id="' + e + '"]').attr('id', nL);
-            $content.find('[id="roro-wrapper-' + e + '"]').attr('id', 'roro-wrapper-' + nL);
-            $content.find('[id="label-' + e + '"]').attr('id', 'label-' + nL);
-            $content.find('[for="' + e + '"]').attr('for', nL);
-            $content.find('[data-id="' + e + '"]').attr('data-id', nL);
+            RoroDom.qsa(content, '[id="' + e + '"]').forEach(el => el.setAttribute('id', nL));
+            RoroDom.qsa(content, '[id="roro-wrapper-' + e + '"]').forEach(el => el.setAttribute('id', 'roro-wrapper-' + nL));
+            RoroDom.qsa(content, '[id="label-' + e + '"]').forEach(el => el.setAttribute('id', 'label-' + nL));
+            RoroDom.qsa(content, '[for="' + e + '"]').forEach(el => el.setAttribute('for', nL));
+            RoroDom.qsa(content, '[data-id="' + e + '"]').forEach(el => el.setAttribute('data-id', nL));
         });
     }
 
@@ -399,122 +407,77 @@ class RoroRepeatable extends RoroElement {
     /**
      * ---------- Wiring ----------
      */
-    registerNested($content) {
-        $content.find('.roro-wrapper-select').each(function () {
-            if (window.addSelect) window.addSelect($(this));
+    registerNested(content) {
+        RoroDom.qsa(content, '.roro-wrapper-select').forEach(function (el) {
+            if (window.addSelect) window.addSelect(el);
         });
-        $content.find('.roro-wrapper-multi-select').each(function () {
-            if (window.addMultiSelect) window.addMultiSelect($(this));
+        RoroDom.qsa(content, '.roro-wrapper-multi-select').forEach(function (el) {
+            if (window.addMultiSelect) window.addMultiSelect(el);
         });
-        $content.find('.roro-input-file').each(function () {
-            if (window.RoroFile) new RoroFile($(this).attr('id'));
+        RoroDom.qsa(content, '.roro-input-file').forEach(function (el) {
+            if (window.RoroFile) new RoroFile(el.id);
         });
-        $content.find('.roro-border-error').each(function () {
-            if (window.manageBorderError) window.manageBorderError($(this));
+        RoroDom.qsa(content, '.roro-border-error').forEach(function (el) {
+            if (window.manageBorderError) window.manageBorderError(el);
         });
     }
 
     bindAdd() {
         const self = this;
-        this.addBtn.on('click', function (ev) {
+        RoroDom.on(this.addBtn, 'click', function (ev) {
             ev.preventDefault();
             self.addRow(null, false);
         });
     }
 
-    bindRowControls($row) {
+    bindRowControls(row) {
         const self = this;
-        $row.find('.roro-repeatable-remove').off('click.roro').on('click.roro', function (ev) {
+        RoroDom.on(RoroDom.qs(row, '.roro-repeatable-remove'), 'click', function (ev) {
             ev.preventDefault();
-            self.removeRow($row);
+            self.removeRow(row);
         });
-        $row.find('.roro-repeatable-up').off('click.roro').on('click.roro', function (ev) {
+        RoroDom.on(RoroDom.qs(row, '.roro-repeatable-up'), 'click', function (ev) {
             ev.preventDefault();
-            self.moveRow($row, -1);
+            self.moveRow(row, -1);
         });
-        $row.find('.roro-repeatable-down').off('click.roro').on('click.roro', function (ev) {
+        RoroDom.on(RoroDom.qs(row, '.roro-repeatable-down'), 'click', function (ev) {
             ev.preventDefault();
-            self.moveRow($row, 1);
+            self.moveRow(row, 1);
         });
-    }
-
-    /**
-     * ---------- Drag & drop reordering (native HTML5 DnD, no dependency) ----------
-     *  Desktop pointer drag. The ▲▼ buttons remain the touch/keyboard fallback
-     *  (use reorder="both"); HTML5 DnD does not fire from touch.
-     */
-    bindRowDrag($row) {
-        const self = this;
-        const $handle = $row.find('.roro-repeatable-handle');
-        if (!$handle.length) return;
-
-        // The row is only draggable while the handle is grabbed, so inputs stay usable.
-        $handle.off('mousedown.roro mouseup.roro')
-            .on('mousedown.roro', () => $row.attr('draggable', 'true'))
-            .on('mouseup.roro', () => { if (!self._dragRow) $row.removeAttr('draggable'); });
-
-        $row.off('dragstart.roro dragend.roro')
-            .on('dragstart.roro', function (ev) {
-                self._dragRow = $row;
-                $row.addClass('roro-repeatable-dragging');
-                const dt = ev.originalEvent.dataTransfer;
-                if (dt) { dt.effectAllowed = 'move'; try { dt.setData('text/plain', ''); } catch (e) {} }
-            })
-            .on('dragend.roro', function () {
-                $row.removeAttr('draggable').removeClass('roro-repeatable-dragging');
-                self.rowsContainer.children('.roro-repeatable-row').removeClass('roro-repeatable-drag-over');
-                self._dragRow = null;
-                self.refreshControls();
-                self.emitChange();
-            });
-    }
-
-    bindDragContainer() {
-        const self = this;
-        this.rowsContainer.off('dragover.roro drop.roro')
-            .on('dragover.roro', function (ev) {
-                const $drag = self._dragRow;
-                if (!$drag) return;
-                ev.preventDefault();
-                const $target = $(ev.target).closest('.roro-repeatable-row');
-                if (!$target.length || $target.is($drag)) return;
-
-                const rect = $target[0].getBoundingClientRect();
-                const after = (ev.originalEvent.clientY - rect.top) > rect.height / 2;
-                if (after) {
-                    if ($target.next('.roro-repeatable-row')[0] !== $drag[0]) $drag.insertAfter($target);
-                } else if ($target.prev('.roro-repeatable-row')[0] !== $drag[0]) {
-                    $drag.insertBefore($target);
-                }
-            })
-            .on('drop.roro', function (ev) { ev.preventDefault(); });
     }
 
     refreshControls() {
         const n = this.count();
         const atMax = n >= this.max;
-        this.addBtn.prop('disabled', atMax).toggleClass('roro-repeatable-disabled', atMax);
-        if (this.emptyEl && this.emptyEl.length) this.emptyEl.toggle(n === 0);
+        if (this.addBtn) {
+            this.addBtn.disabled = atMax;
+            this.addBtn.classList.toggle('roro-repeatable-disabled', atMax);
+        }
+        if (this.emptyEl) RoroDom.toggle(this.emptyEl, n === 0);
 
-        const $rows = this.rowsContainer.children('.roro-repeatable-row');
-        $rows.each((i, el) => {
-            const $r = $(el);
-            if (this.itemLabel) $r.find('.roro-repeatable-row-label').first().text(this.itemLabel + ' ' + (i + 1));
-            const removable = n > this.min && !this.isRowLocked($r);
-            $r.find('.roro-repeatable-remove')
-                .prop('disabled', !removable)
-                .toggleClass('roro-repeatable-disabled', !removable);
+        const rows = this.rows();
+        rows.forEach((el, i) => {
+            if (this.itemLabel) {
+                const lbl = RoroDom.qs(el, '.roro-repeatable-row-label');
+                if (lbl) lbl.textContent = this.itemLabel + ' ' + (i + 1);
+            }
+            const removable = n > this.min && !this.isRowLocked(el);
+            const remove = RoroDom.qs(el, '.roro-repeatable-remove');
+            if (remove) {
+                remove.disabled = !removable;
+                remove.classList.toggle('roro-repeatable-disabled', !removable);
+            }
             if (this.reorderEnabled) {
-                $r.find('.roro-repeatable-up').prop('disabled', i === 0)
-                    .toggleClass('roro-repeatable-disabled', i === 0);
-                $r.find('.roro-repeatable-down').prop('disabled', i === n - 1)
-                    .toggleClass('roro-repeatable-disabled', i === n - 1);
+                const up = RoroDom.qs(el, '.roro-repeatable-up');
+                if (up) { up.disabled = i === 0; up.classList.toggle('roro-repeatable-disabled', i === 0); }
+                const down = RoroDom.qs(el, '.roro-repeatable-down');
+                if (down) { down.disabled = i === n - 1; down.classList.toggle('roro-repeatable-disabled', i === n - 1); }
             }
         });
     }
 
     emitChange() {
-        if (this.wrapper) this.wrapper.trigger('roro:change', [this.getValue()]);
+        if (this.wrapper) RoroDom.emit(this.wrapper, 'roro:change', this.getValue());
     }
 
     /**
