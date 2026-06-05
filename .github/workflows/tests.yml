@@ -21,15 +21,19 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, mbstring, xml, fileinfo
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo, intl, bcmath, ctype, filter, openssl, tokenizer, pdo, sqlite3, pdo_sqlite
           coverage: none
           tools: composer:v2
+        env:
+          # Authenticate composer's GitHub downloads to avoid unauthenticated rate limits.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pin Testbench ${{ matrix.testbench }}
-        run: composer require --dev --no-update --no-interaction "orchestra/testbench:${{ matrix.testbench }}"
-
-      - name: Install dependencies
-        run: composer update --prefer-dist --no-interaction --no-progress
+      - name: Install dependencies (pinned to Testbench ${{ matrix.testbench }})
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
+        run: |
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
+          composer update --prefer-stable --prefer-dist --no-interaction --no-progress --with-all-dependencies
 
       - name: Run Pest
         run: vendor/bin/pest

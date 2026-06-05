@@ -112,8 +112,11 @@ input.roro-input:not([type=checkbox]):not([type=radio]):not([type=range]):not([t
 textarea.roro-input { min-height: 6rem; }
 
 /* ----- checkbox & radio --------------------------------------------------- */
+/* inline-flex + width:auto so a single checkbox stays inline (input + label on
+   one line) and radios flow in a row inside .roro-radio-group, instead of each
+   choice inheriting the block .roro-wrapper width:100% and stacking. */
 .roro-wrapper-checkbox,
-.roro-wrapper-radio { display: flex; align-items: center; gap: .5rem; }
+.roro-wrapper-radio { display: inline-flex; width: auto; align-items: center; gap: .5rem; }
 
 .roro-input-checkbox,
 .roro-input-radio {
