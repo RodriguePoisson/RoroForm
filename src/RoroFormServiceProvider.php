@@ -30,6 +30,7 @@ use RoroForm\View\Components\Inputs\Time;
 use RoroForm\View\Components\Inputs\Url;
 use RoroForm\View\Components\Inputs\Week;
 use RoroForm\View\Components\MultiSelectTextTag;
+use RoroForm\View\Components\RawStyles;
 use RoroForm\View\Components\RepeatableHelper;
 use RoroForm\View\Components\RequiredLabel;
 use RoroForm\View\Components\Inputs\Text;
@@ -55,8 +56,13 @@ class RoroFormServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/roroform'),
         ], 'roro-views');
 
+        $this->publishes([
+            __DIR__.'/../resources/css/roroform-raw.css' => public_path('vendor/roroform/roroform.css'),
+        ], 'roro-styles');
+
         Blade::component('roro-form', Form::class);
         Blade::component('roro-helper', Helper::class);
+        Blade::component('roro-raw-styles', RawStyles::class);
         Blade::component('roro-select-helper', SelectHelper::class);
         Blade::component('roro-file-helper', FileHelper::class);
         Blade::component('roro-repeatable-helper', RepeatableHelper::class);

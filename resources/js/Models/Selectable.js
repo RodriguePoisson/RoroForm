@@ -34,11 +34,13 @@ class RoroOption {
     }
 
     mark() {
+        this.elt.setAttribute('aria-selected', 'true');
         RoroDom.qsa(this.elt, '.roro-select-option-check, .roro-select-option-overlay')
             .forEach(e => RoroDom.show(e));
     }
 
     unmark() {
+        this.elt.setAttribute('aria-selected', 'false');
         RoroDom.qsa(this.elt, '.roro-select-option-check, .roro-select-option-overlay')
             .forEach(e => RoroDom.hide(e));
     }
@@ -65,6 +67,8 @@ class Selectable extends Input {
     categories = [];
     options = [];
     optionsFiltered = [];
+    activeIndex = -1;       // keyboard-active option (a11y combobox)
+    closeOnSelect = true;   // single select closes on pick; multi stays open
 
     constructor(id, prefixId = '', values = null) {
         super('select', id, prefixId);
@@ -214,8 +218,12 @@ class Selectable extends Input {
 
     showDropDown(show) {
         if (show !== undefined) this.selectWrapper.dataset.show = show ? '1' : '0';
-        if (boolData(this.selectWrapper, 'show')) RoroDom.show(this.dropdown);
-        else RoroDom.hide(this.dropdown);
+        const open = boolData(this.selectWrapper, 'show');
+        if (open) RoroDom.show(this.dropdown); else RoroDom.hide(this.dropdown);
+        if (this.isA11y()) {
+            this.textInput.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (!open) this.clearActive();
+        }
     }
 
     toggleDropDown() {
@@ -229,6 +237,7 @@ class Selectable extends Input {
         RoroDom.on(this.textInput, 'input', () => {
             this.filterOptions((this.textInput.value || '') + (this.textInput.textContent || ''));
             this.showFilteredOptions();
+            if (this.isA11y()) this.clearActive();
         });
 
         RoroDom.on(this.selectWrapper, 'click', () => this.toggleDropDown());
@@ -238,6 +247,83 @@ class Selectable extends Input {
             ev.stopPropagation();
             this.clearInput();
         });
+
+        if (this.isA11y()) {
+            RoroDom.on(this.textInput, 'keydown', ev => this.handleKeydown(ev));
+        }
+    }
+
+    /**
+     * ---------- Keyboard a11y (ARIA combobox) ----------
+     * Active only when the control is a role="combobox" (the raw theme). The
+     * Tailwind/Bootstrap themes don't carry the role yet, so they are untouched.
+     */
+    isA11y() {
+        return !!(this.textInput && this.textInput.getAttribute
+            && this.textInput.getAttribute('role') === 'combobox');
+    }
+
+    // Options currently visible in the dropdown (skips filtered-out + templates).
+    navOptions() {
+        return this.options.filter(o =>
+            o.elt && o.elt.style.display !== 'none' && !o.elt.closest('.roro-select-templates'));
+    }
+
+    clearActive() {
+        this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
+        this.activeIndex = -1;
+        if (this.textInput) this.textInput.setAttribute('aria-activedescendant', '');
+    }
+
+    setActive(index, list) {
+        const options = list || this.navOptions();
+        if (!options.length) return;
+        if (index < 0) index = options.length - 1;
+        if (index >= options.length) index = 0;
+
+        this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
+        this.activeIndex = index;
+        const opt = options[index];
+        opt.elt.classList.add('roro-option-active');
+        this.textInput.setAttribute('aria-activedescendant', opt.elt.id || '');
+        if (opt.elt.scrollIntoView) opt.elt.scrollIntoView({ block: 'nearest' });
+    }
+
+    handleKeydown(ev) {
+        const open = boolData(this.selectWrapper, 'show');
+        const options = this.navOptions();
+
+        switch (ev.key) {
+            case 'ArrowDown':
+                ev.preventDefault();
+                if (!open) { this.showDropDown(true); this.setActive(0, options); }
+                else this.setActive(this.activeIndex + 1, options);
+                break;
+            case 'ArrowUp':
+                ev.preventDefault();
+                if (!open) { this.showDropDown(true); this.setActive(options.length - 1, options); }
+                else this.setActive(this.activeIndex - 1, options);
+                break;
+            case 'Home':
+                if (open) { ev.preventDefault(); this.setActive(0, options); }
+                break;
+            case 'End':
+                if (open) { ev.preventDefault(); this.setActive(options.length - 1, options); }
+                break;
+            case 'Enter':
+                if (open && this.activeIndex >= 0 && options[this.activeIndex]) {
+                    ev.preventDefault();
+                    this.handleOptionClick(options[this.activeIndex]);
+                    if (this.closeOnSelect) this.showDropDown(false);
+                }
+                break;
+            case 'Escape':
+                if (open) { ev.preventDefault(); this.showDropDown(false); }
+                break;
+            case 'Tab':
+                if (open) this.showDropDown(false);
+                break;
+        }
     }
 
     /**
@@ -342,6 +428,7 @@ class Select extends Selectable {
  */
 class MultiSelect extends Selectable {
     listTag = [];
+    closeOnSelect = false;   // keep the listbox open while picking multiple
 
     constructor(id, name, values = []) {
         super(id, 'roro-wrapper', values);

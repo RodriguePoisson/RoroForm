@@ -378,7 +378,8 @@ class RoroRepeatable extends RoroElement {
         RoroDom.qsa(content, '[data-id]').forEach(el => logical.add(String(el.getAttribute('data-id'))));
         RoroDom.qsa(content, '[id]').forEach(el => {
             const id = el.getAttribute('id');
-            if (id.indexOf('roro-wrapper-') === 0 || id.indexOf('label-') === 0) return;
+            if (id.indexOf('roro-wrapper-') === 0 || id.indexOf('label-') === 0
+                || id.indexOf('roro-listbox-') === 0 || id.indexOf('roro-error-') === 0) return;
             logical.add(id);
         });
 
@@ -390,6 +391,14 @@ class RoroRepeatable extends RoroElement {
             RoroDom.qsa(content, '[id="label-' + e + '"]').forEach(el => el.setAttribute('id', 'label-' + nL));
             RoroDom.qsa(content, '[for="' + e + '"]').forEach(el => el.setAttribute('for', nL));
             RoroDom.qsa(content, '[data-id="' + e + '"]').forEach(el => el.setAttribute('data-id', nL));
+
+            // a11y composite ids (raw theme) + the attributes that reference them,
+            // so aria-controls / aria-describedby / aria-labelledby stay valid per row.
+            RoroDom.qsa(content, '[id="roro-listbox-' + e + '"]').forEach(el => el.setAttribute('id', 'roro-listbox-' + nL));
+            RoroDom.qsa(content, '[id="roro-error-' + e + '"]').forEach(el => el.setAttribute('id', 'roro-error-' + nL));
+            RoroDom.qsa(content, '[aria-controls="roro-listbox-' + e + '"]').forEach(el => el.setAttribute('aria-controls', 'roro-listbox-' + nL));
+            RoroDom.qsa(content, '[aria-describedby="roro-error-' + e + '"]').forEach(el => el.setAttribute('aria-describedby', 'roro-error-' + nL));
+            RoroDom.qsa(content, '[aria-labelledby="label-' + e + '"]').forEach(el => el.setAttribute('aria-labelledby', 'label-' + nL));
         });
     }
 

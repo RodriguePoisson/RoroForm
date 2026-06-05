@@ -9,6 +9,14 @@ window.roroShowError = function (inputId, message = '', show = true) {
     errorMessage.textContent = message;
     RoroDom.toggle(error, show);
     manageBorderError(RoroDom.qs(wrapper, '.roro-border-error'), show);
+
+    // Mark the control invalid for assistive tech (no-op styling on themes
+    // that don't key off aria-invalid).
+    const control = RoroDom.qs(wrapper, '[role="combobox"]')
+        || RoroDom.qs(wrapper, '.roro-select-text-input')
+        || document.getElementById(inputId)
+        || RoroDom.qs(wrapper, '.roro-input');
+    if (control) control.setAttribute('aria-invalid', show ? 'true' : 'false');
 };
 
 window.manageBorderError = function (elt, show = null) {
