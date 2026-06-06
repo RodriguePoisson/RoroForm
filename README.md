@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  25+ input components · searchable selects · repeatable groups that actually work · a chainable, type-aware JS API · Tailwind &amp; Bootstrap themes — wired into Laravel's <code>old()</code>, validation errors and CSRF out of the box.
+  25+ input components · searchable selects · repeatable groups that actually work · a chainable, type-aware JS API · Tailwind, Bootstrap &amp; framework-free themes — wired into Laravel's <code>old()</code>, validation errors and CSRF out of the box.
 </p>
 
 <p align="center">
@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/JS-zero%20dependencies-f7df1e?logo=javascript&logoColor=black" alt="Zero JS dependencies">
   <img src="https://img.shields.io/badge/PHP-%5E8.0-777BB4?logo=php&logoColor=white" alt="PHP ^8.0">
   <img src="https://img.shields.io/badge/Laravel-9%20%E2%86%92%2013-FF2D20?logo=laravel&logoColor=white" alt="Laravel 9 to 13">
-  <img src="https://img.shields.io/badge/themes-Tailwind%20%7C%20Bootstrap-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind | Bootstrap">
+  <img src="https://img.shields.io/badge/themes-Tailwind%20%7C%20Bootstrap%20%7C%20none-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind | Bootstrap | none">
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache-2.0">
 </p>
 
