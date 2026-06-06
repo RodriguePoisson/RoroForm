@@ -39,7 +39,7 @@ Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whol
 
 ## Quick start
 
-> **Requirements:** PHP `^8.0` · Laravel `9 → 13` · Tailwind **or** Bootstrap CSS present (depending on the theme you pick). **No JavaScript dependencies** — the runtime is vanilla JS.
+> **Requirements:** PHP `^8.0` · Laravel `9 → 13`. **CSS is optional** — the `raw` theme (framework-free) ships its own stylesheet, so you only need Tailwind or Bootstrap *if* you pick that theme. **No JavaScript dependencies** — the runtime is vanilla JS.
 
 **1. Install**
 
