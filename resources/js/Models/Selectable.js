@@ -69,6 +69,8 @@ class Selectable extends Input {
     optionsFiltered = [];
     activeOption = null;    // keyboard-active option, tracked by identity (a11y combobox)
     closeOnSelect = true;   // single select closes on pick; multi stays open
+    nativeMode = false;     // touch / coarse-pointer: a real <select> replaces the custom UI
+    nativeSelect = null;
 
     constructor(id, prefixId = '', values = null) {
         super('select', id, prefixId);
@@ -88,6 +90,7 @@ class Selectable extends Input {
         this.showDropDown();
         this.initValues();
         this.handleDisableReadonly();
+        this.maybeEnableNative();
         this._initializing = false;
         return this;
     }
@@ -133,6 +136,7 @@ class Selectable extends Input {
         const option = new RoroOption(optionEl);
         option.bindClick(this);
         this.options.push(option);
+        this.refreshNative();
         return option;
     }
 
@@ -155,6 +159,7 @@ class Selectable extends Input {
     removeOption(option) {
         this.options = this.options.filter(opt => opt.id !== option.id);
         option.elt.remove();
+        this.refreshNative();
     }
 
     static uid(prefix) {
@@ -199,6 +204,7 @@ class Selectable extends Input {
         this.elt.dataset.disable = disable ? '1' : '0';
         if (this.textInput) this.textInput.disabled = disable;
         RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.disabled = disable; });
+        this.syncNativeEnabled();
     }
 
     readonly(readonly = true) {
@@ -206,6 +212,7 @@ class Selectable extends Input {
         this.elt.dataset.readonly = readonly ? '1' : '0';
         if (this.textInput) this.textInput.readOnly = readonly;
         RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.readOnly = readonly; });
+        this.syncNativeEnabled();
     }
 
     /**
@@ -227,6 +234,7 @@ class Selectable extends Input {
     }
 
     toggleDropDown() {
+        if (this.nativeMode) return;   // native <select> owns its own popup
         roroShowDropDown(this.id.replace('roro-wrapper-', ''), !boolData(this.selectWrapper, 'show'));
     }
 
@@ -322,6 +330,7 @@ class Selectable extends Input {
     }
 
     handleKeydown(ev) {
+        if (this.nativeMode) return;   // native <select> handles its own keyboard
         const open = boolData(this.selectWrapper, 'show');
 
         switch (ev.key) {
@@ -384,6 +393,130 @@ class Selectable extends Input {
 
     resetOptionMarkers() {
         this.options.forEach(o => o.unmark());
+    }
+
+    /**
+     * ---------- Native picker fallback (touch / coarse-pointer devices) -------
+     * On phones/tablets a real <select> gives the OS picker — better UX and full
+     * accessibility for free — so we swap the custom combobox for one. The native
+     * element carries NO name: it drives the same hidden input(s) on change, so
+     * form submission and the value model are identical to the desktop path.
+     * Gate: `(pointer: coarse)`. Force everywhere with window.roroForceNativeSelect
+     * = true; opt a single instance out with data-native="0" on its wrapper.
+     */
+    isMultiple() { return false; }   // MultiSelect overrides → true
+
+    prefersNativeSelect() {
+        if (this.selectWrapper && this.selectWrapper.dataset.native === '0') return false;
+        if (typeof window === 'undefined') return false;
+        if (window.roroForceNativeSelect) return true;
+        if (typeof window.matchMedia === 'function') {
+            try { return !!window.matchMedia('(pointer: coarse)').matches; } catch (e) { /* unsupported */ }
+        }
+        return false;
+    }
+
+    maybeEnableNative() {
+        if (this.prefersNativeSelect()) this.enableNativeMode();
+    }
+
+    enableNativeMode() {
+        if (this.nativeMode || !this.textInput) return;
+        this.nativeMode = true;
+        this.buildNativeSelect();
+        this.syncNativeFromState();
+        this.syncNativeEnabled();
+        // Hide the custom UI; the hidden submission input(s) stay in the DOM.
+        RoroDom.hide(this.textInput);
+        RoroDom.hide(this.dropdown);
+        const clear = RoroDom.qs(this.elt, '.roro-select-clear-button');
+        if (clear) RoroDom.hide(clear);
+    }
+
+    buildNativeSelect() {
+        if (this.nativeSelect) return this.nativeSelect;
+        const sel = document.createElement('select');
+        sel.className = 'roro-select-native';
+        sel.style.width = '100%';
+        if (this.isMultiple()) sel.multiple = true;
+        const inputId = this.id.replace('roro-wrapper-', '');
+        if (document.getElementById('label-' + inputId)) {
+            sel.setAttribute('aria-labelledby', 'label-' + inputId);
+        }
+        this.rebuildNativeOptions(sel);
+        RoroDom.on(sel, 'change', () => this.onNativeChange());
+        this.textInput.parentNode.insertBefore(sel, this.textInput);
+        this.nativeSelect = sel;
+        return sel;
+    }
+
+    // Mirror the dropdown's options/categories into <option>/<optgroup>, in live
+    // DOM (visual) order — the same source of truth as the keyboard navigation.
+    rebuildNativeOptions(sel) {
+        const target = sel || this.nativeSelect;
+        if (!target) return;
+        target.replaceChildren();
+        if (!this.isMultiple()) {
+            const ph = document.createElement('option');
+            ph.value = '';
+            ph.textContent = (this.textInput && this.textInput.getAttribute('placeholder')) || '';
+            target.appendChild(ph);
+        }
+        const byElt = new Map(this.options.map(o => [o.elt, o]));
+        const addOpt = (parent, el) => {
+            const ro = byElt.get(el);
+            if (!ro) return;
+            const o = document.createElement('option');
+            o.value = ro.value;
+            o.textContent = ro.label;
+            parent.appendChild(o);
+        };
+        RoroDom.children(this.dropdown).forEach(child => {
+            if (RoroDom.matches(child, '.roro-select-category')) {
+                const og = document.createElement('optgroup');
+                og.label = child.dataset.category || '';
+                RoroDom.qsa(child, '.roro-select-option').forEach(el => addOpt(og, el));
+                if (og.children.length) target.appendChild(og);
+            } else if (RoroDom.matches(child, '.roro-select-option')) {
+                addOpt(target, child);
+            }
+        });
+    }
+
+    syncNativeFromState() {
+        if (!this.nativeSelect) return;
+        if (this.isMultiple()) {
+            const vals = this.getValue() || [];
+            RoroDom.qsa(this.nativeSelect, 'option').forEach(o => { o.selected = vals.includes(o.value); });
+        } else {
+            const v = this.getValue();
+            this.nativeSelect.value = (v === null || v === undefined) ? '' : String(v);
+        }
+    }
+
+    onNativeChange() {
+        if (this.isMultiple()) {
+            this.values = RoroDom.qsa(this.nativeSelect, 'option').filter(o => o.selected).map(o => o.value);
+            this.setHiddenValue(this.values);
+            this.actualize();
+        } else {
+            const v = this.nativeSelect.value;
+            this.setOptionSelected(v === '' ? null : v);
+        }
+    }
+
+    // Native <select> has no readonly attribute: emulate it (and disabled) by
+    // disabling the element. Submission is unaffected — the hidden input carries
+    // the value and keeps its own readonly/disabled state.
+    syncNativeEnabled() {
+        if (this.nativeSelect) this.nativeSelect.disabled = this.isDisabled() || this.isReadonly();
+    }
+
+    // Keep the native <select> in step after the option set changes at runtime.
+    refreshNative() {
+        if (!this.nativeMode || !this.nativeSelect) return;
+        this.rebuildNativeOptions();
+        this.syncNativeFromState();
     }
 }
 
@@ -478,6 +611,8 @@ class Select extends Selectable {
 class MultiSelect extends Selectable {
     listTag = [];
     closeOnSelect = false;   // keep the listbox open while picking multiple
+
+    isMultiple() { return true; }
 
     constructor(id, name, values = []) {
         super(id, 'roro-wrapper', values);

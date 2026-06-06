@@ -176,6 +176,156 @@ Every component renders a full field: wrapper, optional label, the control, a va
 </details>
 
 <details>
+<summary><strong>🧾 Every attribute, every component — the full reference</strong></summary>
+
+<br>
+
+**Conventions.** Write string attributes plainly (`label="Email"`); add a **`:` prefix** to bind booleans, numbers, arrays and PHP expressions (`:required="true"`, `:options="[...]"`). camelCase props are written in **kebab-case** in Blade — `wrapperClass` → `wrapper-class`, `hasTopMargins` → `:has-top-margins`, `requirementsText` → `requirements-text`. Any attribute *not* listed below lands on the underlying element as a plain HTML attribute (see *Arbitrary HTML attributes pass-through*).
+
+#### Shared — every field input (from `InputMain`)
+
+Applies to **all** field components below (text, number, date, select, file, checkbox, radio, repeatable…) unless noted.
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `id` | `string` | auto (`uniqid()`) | Element id; auto-generated when omitted. |
+| `name` | `string` | `''` | Field name — maps onto the request payload (supports nested `user[26][name]`). |
+| `label` | `string` | `null` | Label text rendered above/beside the control. |
+| `value` | `string` | `''` | Initial value (overridden by `old()` after a failed validation). |
+| `placeholder` | `string` | `''` | Placeholder text. |
+| `:required` | `bool` | `false` | Adds `required` + `aria-required`. |
+| `:disabled` | `bool` | `false` | Disables the control. |
+| `:readonly` | `bool` | `false` | Marks the control read-only. |
+| `:hidden` | `bool` | `false` | Renders the field's wrapper hidden (`display:none`). |
+| `class` | `string` | `''` | Extra classes on the **control** (merged with the `roro-*` classes). |
+| `wrapper-class` | `string` | `''` | Extra classes on the field **wrapper**. |
+| `label-class` | `string` | `''` | Extra classes on the **label**. |
+| `tooltip` | `string` | `null` | Tooltip text shown next to the label. |
+| `:enable-error` | `bool` | `true` | Render the inline error slot for this field. |
+| `:has-top-margins` | `bool` | `true` | Apply the default top margin to the field. |
+| `:populate` | `array` | `[]` | Candidate values for repopulation (first truthy wins; `old()` takes precedence). |
+| `:disable-js-validation` | `bool` | config | Drop the HTML validation attributes for this field. Defaults to the inverse of `defaultJsValidation`. |
+
+#### Text-like — `<x-roro-text>` `<x-roro-email>` `<x-roro-password>` `<x-roro-url>` `<x-roro-tel>` `<x-roro-hidden>`
+
+No extra attributes — **shared only**. They differ purely by their HTML `type` (`text`/`email`/`password`/`url`/`tel`/`hidden`).
+
+#### Numeric & date/time — `<x-roro-number>` `<x-roro-range>` `<x-roro-date>` `<x-roro-time>` `<x-roro-datetime-local>` `<x-roro-week>` `<x-roro-month>` (from `NumericMain`)
+
+Shared **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `min` | `string` | `null` | Minimum value (a number, or a date/time bound for the date inputs). |
+| `max` | `string` | `null` | Maximum value. |
+| `step` | `string` | `null` | Step increment. |
+| `list` | `string` | `null` | Id of a `<datalist>` to attach (handy on `range`). |
+
+#### Color — `<x-roro-color>`
+
+Shared **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `:hide-text-input` | `bool` | `false` | Hide the hex text field, leaving just the colour swatch. |
+
+#### Checkbox — `<x-roro-checkbox>` (from `CheckableMain`)
+
+Shared (with `value` defaulting to `'1'`) **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `:checked` | `bool` | `false` | Whether the box is checked (auto-set to `true` when a non-empty value is repopulated). |
+
+#### Radio group — `<x-roro-radio-container>` + `<x-roro-radio>`
+
+`<x-roro-radio-container>` wraps the group in a `<fieldset>`/`<legend>`; each `<x-roro-radio>` is one option (it's a `CheckableMain`, so its `value` is the option value and `:checked` flags the default).
+
+**`<x-roro-radio-container>`** — shared **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `subtitle` | `string` | `null` | Helper text shown under the group legend. |
+| `subtitle-class` | `string` | `''` | Extra classes on the subtitle. |
+| `fieldset-class` | `string` | `''` | Extra classes on the `<fieldset>`. |
+
+**`<x-roro-radio>`** — shared (with `value` = the option value) **plus** `:checked` (`bool`, `false`).
+
+#### Selects — `<x-roro-select>` `<x-roro-multi-select>` (from `SelectableMain`)
+
+Shared **plus** (for the multi-select, end the `name` with `[]`):
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `:options` | `array` | `[]` | Options — flat `['fr' => 'France']` or grouped `['Europe' => ['fr' => 'France']]`. |
+| `:values` | `array` | `[]` | Pre-selected values (multi-select; single-select uses `value`). |
+| `:search-bar` | `bool` | `true` | Show the in-dropdown search field. |
+| `:clear-button` | `bool` | `true` | Show the clear (✕) button. |
+| `:options-open` | `bool` | `false` | Render with the dropdown initially open. |
+
+#### File — `<x-roro-file>`
+
+Shared **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `:multiple` | `bool` | `true` | Allow selecting multiple files (end the `name` with `[]`). |
+| `accept` | `string` | `''` | The native `accept` filter (e.g. `image/*,.pdf`). |
+| `max-size` | `string` | `''` | Max size hint shown to the user. |
+| `requirements-text` | `string` | `''` | Free-text requirements line under the control. |
+
+#### Repeatable — `<x-roro-repeatable>`
+
+Forwards the shared field props (except `value`/`placeholder` — a repeatable holds rows, not one value) **plus**:
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | `string` | `''` | Array prefix the rows submit under (e.g. `contacts`). |
+| `:rows` | `array` | `[]` | Initial dataset: an array of rows (maps, or scalars in token mode). |
+| `:min` | `int` | `1` | Minimum number of rows (can't remove below it). |
+| `:max` | `int` | `null` | Maximum number of rows (`null` = unlimited). |
+| `:reorder` | `bool\|string` | `false` | `false`, `true`/`'buttons'` (▲▼), `'drag'` (handle), or `'both'`. |
+| `item-label` | `string` | `null` | Per-row heading prefix, numbered automatically (`Contact 1`…). |
+| `key-field` | `string` | `null` | Inner field whose value uniquely identifies a row (e.g. `id`) — target rows by stable key. |
+| `add-label` | `string` | `'+ Add'` | Text/markup of the add button. |
+| `remove-label` | `string` | `null` | Text/markup of the per-row remove button (theme default when `null`). |
+| `index-token` | `string` | `''` | If set (e.g. `#`), replaces the token in inner names instead of auto-prefixing. |
+| `:indexed` | `bool` | `true` | Set to `false` to leave inner names **verbatim** (no `prefix[i]`/token). |
+| `row-class` | `string` | `''` | Extra classes applied to every row. |
+
+#### Button — `<x-roro-button>`
+
+A standalone `ComponentMain` (not an `InputMain`):
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `type` | `string` | `'submit'` | The button `type` (`submit`/`button`/`reset`). |
+| `id` | `string` | auto | Element id. |
+| `class` | `string` | `''` | Extra classes on the button. |
+| `form-id` | `string` | `null` | The form this button submits (required for AJAX submit). |
+| `button-color` | `string` | `'bg-blue-600'` | Base colour class. |
+| `button-hover-color` | `string` | `'bg-blue-700'` | Hover colour class. |
+| `button-text-color` | `string` | `'text-white'` | Text colour class. |
+| `:disabled` | `bool` | `false` | Disable the button. |
+| `:has-top-margins` | `bool` | `true` | Apply the default top margin. |
+| `:ajax` | `bool` | `false` | Submit the form over AJAX (FormData, overlay, events). |
+| `:enable-ajax-errors` | `bool` | `true` | Map a `422` response's `errors` back onto the matching fields. |
+
+#### Form — `<x-roro-form>`
+
+| Attribute | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `action` | `string` | `''` | Form action URL. |
+| `method` | `string` | `'POST'` | HTTP method (set on the `<form>`); `@csrf` is injected for `POST`/`PUT`/`PATCH`/`DELETE`. |
+| `id` | `string` | auto | Form id (used by `roro.form(id)` and the button's `form-id`). |
+| `class` | `string` | `''` | Extra classes on the `<form>`. |
+| `:multipart` | `bool` | `false` | Shortcut for `enctype="multipart/form-data"` (for file uploads). |
+| `enctype` | `string` | `null` | Explicit enctype — takes precedence over `:multipart`. |
+| `:overlay` | `bool` | `true` | Render the loading overlay used during AJAX submits. |
+
+</details>
+
+<details>
 <summary><strong>🔎 Smart selects — searchable, grouped, dynamic</strong></summary>
 
 <br>
