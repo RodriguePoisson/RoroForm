@@ -29,7 +29,15 @@ class RoroOption {
     bindClick(select) {
         // Drop the previous handler first => no double-binding after a re-render.
         if (this._onClick) this.elt.removeEventListener('click', this._onClick);
-        this._onClick = () => select.handleOptionClick(this);
+        this._onClick = (ev) => {
+            // Stop the click bubbling to the wrapper's toggle handler — otherwise
+            // it would fire on every pick (closing multi-select mid-selection).
+            // Single select closes here (mirrors the keyboard Enter path); multi
+            // stays open to keep picking.
+            if (ev) ev.stopPropagation();
+            select.handleOptionClick(this);
+            if (select.closeOnSelect) select.showDropDown(false);
+        };
         this.elt.addEventListener('click', this._onClick);
     }
 
@@ -256,9 +264,16 @@ class Selectable extends Input {
             this.clearInput();
         });
 
+        // Clicking inside the dropdown must NOT move focus off the combobox.
+        // Otherwise the mousedown blurs it, the focus-out handler below closes the
+        // list, and the option is hidden before its click lands — so the pick
+        // silently fails (mouse dead, keyboard fine). preventDefault on mousedown
+        // keeps focus put; the option's click still fires normally.
+        RoroDom.on(this.dropdown, 'mousedown', ev => ev.preventDefault());
+
         // Close the dropdown once focus leaves the whole widget (Tab away, click
-        // outside, focus another field). Clicking an option does not blur the
-        // combobox (option rows are not focusable), so multi-select stays open.
+        // outside, focus another field). Clicking an option keeps the combobox
+        // focused (mousedown default prevented above), so multi-select stays open.
         RoroDom.on(this.selectWrapper, 'focusout', ev => this.handleFocusOut(ev));
 
         if (this.isA11y()) {

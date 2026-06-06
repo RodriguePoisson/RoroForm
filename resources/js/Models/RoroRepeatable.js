@@ -38,6 +38,7 @@ class RoroRepeatable extends RoroElement {
         this.itemLabel = this.wrapper.getAttribute('data-item-label') || '';
         this.keyField = this.wrapper.getAttribute('data-key-field') || '';
         this.reorderEnabled = !!this.wrapper.getAttribute('data-reorder');
+        this.dragEnabled = !!this.wrapper.getAttribute('data-reorder-drag');
         this.indexed = this.wrapper.getAttribute('data-indexed') !== '0';
 
         this.min = parseInt(this.wrapper.getAttribute('data-min'), 10);
@@ -52,6 +53,7 @@ class RoroRepeatable extends RoroElement {
         for (let i = 0; i < count; i++) this.addRow(data[i] || null, true);
 
         this.bindAdd();
+        if (this.dragEnabled) this.bindDragContainer();
         this.refreshControls();
         return this;
     }
@@ -93,6 +95,7 @@ class RoroRepeatable extends RoroElement {
         this.rowsContainer.appendChild(row);   // attach before registering so ids resolve
         this.registerNested(content);
         this.bindRowControls(row);
+        if (this.dragEnabled) this.bindRowDrag(row);
 
         this.refreshControls();
         if (!isInit) this.emitChange();
@@ -453,6 +456,57 @@ class RoroRepeatable extends RoroElement {
             ev.preventDefault();
             self.moveRow(row, 1);
         });
+    }
+
+    /**
+     * ---------- Drag & drop reordering (native HTML5 DnD, no dependency) ------
+     *  Desktop pointer drag. The ▲▼ buttons stay the touch/keyboard fallback
+     *  (use reorder="both") — HTML5 DnD does not fire from touch.
+     */
+    bindRowDrag(row) {
+        const handle = RoroDom.qs(row, '.roro-repeatable-handle');
+        if (!handle) return;
+
+        // The row is draggable ONLY while its handle is grabbed, so the inputs in
+        // the row stay selectable/usable the rest of the time.
+        RoroDom.on(handle, 'mousedown', () => row.setAttribute('draggable', 'true'));
+        RoroDom.on(handle, 'mouseup', () => { if (!this._dragRow) row.removeAttribute('draggable'); });
+
+        RoroDom.on(row, 'dragstart', ev => {
+            this._dragRow = row;
+            row.classList.add('roro-repeatable-dragging');
+            const dt = ev.dataTransfer;
+            if (dt) { dt.effectAllowed = 'move'; try { dt.setData('text/plain', ''); } catch (e) { /* IE */ } }
+        });
+        RoroDom.on(row, 'dragend', () => {
+            row.removeAttribute('draggable');
+            row.classList.remove('roro-repeatable-dragging');
+            this.rows().forEach(r => r.classList.remove('roro-repeatable-drag-over'));
+            this._dragRow = null;
+            this.refreshControls();   // up/down disabled-state follows the new order
+            this.emitChange();
+        });
+    }
+
+    bindDragContainer() {
+        RoroDom.on(this.rowsContainer, 'dragover', ev => {
+            const drag = this._dragRow;
+            if (!drag) return;                         // not our drag (e.g. a nested repeatable)
+            const target = ev.target.closest ? ev.target.closest('.roro-repeatable-row') : null;
+            // Only react to OUR direct rows; ignore the dragged row itself.
+            if (!target || target === drag || target.parentNode !== this.rowsContainer) return;
+            ev.preventDefault();                       // allow the drop
+
+            // Live-swap: move the dragged row to the cursor side of the target.
+            const rect = target.getBoundingClientRect();
+            const after = (ev.clientY - rect.top) > rect.height / 2;
+            if (after) {
+                if (target.nextElementSibling !== drag) this.rowsContainer.insertBefore(drag, target.nextElementSibling);
+            } else if (target.previousElementSibling !== drag) {
+                this.rowsContainer.insertBefore(drag, target);
+            }
+        });
+        RoroDom.on(this.rowsContainer, 'drop', ev => ev.preventDefault());
     }
 
     refreshControls() {
