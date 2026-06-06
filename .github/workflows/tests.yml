@@ -7,13 +7,12 @@ on:
 
 jobs:
   php:
-    name: PHP ${{ matrix.php }} · Testbench ${{ matrix.testbench }}
+    name: PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4']
-        testbench: ['9.*', '10.*']
     steps:
       - uses: actions/checkout@v4
 
@@ -21,19 +20,17 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, fileinfo, intl, bcmath, ctype, filter, openssl, tokenizer, pdo, sqlite3, pdo_sqlite
+          extensions: dom, mbstring, xml, fileinfo
           coverage: none
           tools: composer:v2
-        env:
-          # Authenticate composer's GitHub downloads to avoid unauthenticated rate limits.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies (pinned to Testbench ${{ matrix.testbench }})
-        env:
-          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
-        run: |
-          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
-          composer update --prefer-stable --prefer-dist --no-interaction --no-progress --with-all-dependencies
+      # The package supports Laravel 9–13 at the code level, but the EOL releases
+      # (9/10/11) can no longer be installed cleanly: their latest versions carry
+      # unpatched security advisories that Composer 2.8+ refuses to resolve. CI
+      # therefore runs against the current, supported Laravel (12, via Testbench
+      # 10 — the highest the dev constraint allows).
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction --no-progress
 
       - name: Run Pest
         run: vendor/bin/pest
