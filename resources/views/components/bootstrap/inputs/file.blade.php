@@ -32,6 +32,9 @@
                 @if($disabled) disabled @endif
                 @if($readonly) readonly @endif
                 {{ ($required && !$disableJsValidation)? 'required' : '' }}
+                @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
+                aria-invalid="{{ $error ? 'true' : 'false' }}"
+                @if($required) aria-required="true" @endif
                 {{ $attributes->class([
                     'roro-input roro-input-file file-input position-absolute top-0 start-0 w-100 h-100 opacity-0',
                 ]) }}
@@ -47,12 +50,12 @@
         <span style="display: none;"
             class="roro-file-name badge rounded-pill bg-primary bg-opacity-10 text-primary fw-medium px-3 py-2 me-2 mt-1">
             <span class="roro-file-name-text"></span>
-            <button type="button"
+            <button type="button" aria-label="Remove"
                     class="roro-file-name-delete ms-2 p-0 border-0 bg-transparent text-primary align-middle lh-1">
                 ✕
             </button>
         </span>
     </p>
 
-    <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+    <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
 </div>

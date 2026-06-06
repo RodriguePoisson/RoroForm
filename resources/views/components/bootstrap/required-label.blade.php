@@ -1,1 +1,1 @@
-<span class="text-danger">*</span>
+<span class="text-danger" aria-hidden="true">*</span><span class="visually-hidden"> (required)</span>

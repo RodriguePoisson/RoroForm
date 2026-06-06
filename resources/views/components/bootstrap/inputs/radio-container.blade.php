@@ -1,4 +1,5 @@
 <fieldset
+    @if($error) aria-invalid="true" @endif
     {{ $attributes->class([
         'roro-wrapper-radio-container',
         'mt-4' => $hasTopMargins,
@@ -12,6 +13,6 @@
         <div class="roro-input d-flex flex-column flex-sm-row flex-sm-wrap gap-2 gap-sm-3 mb-3 {{$wrapperClass}}">
             {{$slot}}
         </div>
-        <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+        <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
     </x-roro-border-error>
 </fieldset>

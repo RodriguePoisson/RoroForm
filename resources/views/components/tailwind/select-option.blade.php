@@ -1,5 +1,7 @@
 <div id="{{$id}}"
      style="@if($hidden) display:none; @endif"
+     role="option"
+     aria-selected="false"
      data-value="{{$value}}"
      data-label="{{$label}}"
      class="roro-select-option relative cursor-pointer px-3.5 py-2 text-sm text-gray-700 hover:bg-blue-50 {{$class}}">

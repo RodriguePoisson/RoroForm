@@ -293,13 +293,12 @@ it('does not emit required when defaultJsValidation=false', function () {
         '<x-roro-select name="country" id="country" :required="true" />'
     );
 
-    // The text input must not carry the required attribute
-    // (the hidden input never has it, so checking "required" presence in text-input region only)
-    // We check that the roro-select-text-input section does not contain "required"
-    // by asserting the whole HTML does not contain the standalone word "required"
-    // (it only appears when emitted)
-    // The blade outputs `required` or empty string — when false it's just empty
-    expect($html)->not->toContain('required');
+    // The text input must not carry the native HTML required attribute when JS
+    // validation is off. aria-required="true" is still emitted (it is semantic,
+    // not validation), so we match the bare `required` attribute only — a
+    // "required" not preceded by a word char (excludes "aria-required") and not
+    // followed by "=" (excludes the attribute's own value).
+    expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
 });
 
 // --------------- select: hidden=true collapses wrapper -------------

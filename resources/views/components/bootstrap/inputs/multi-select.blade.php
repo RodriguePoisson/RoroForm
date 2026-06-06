@@ -24,6 +24,16 @@
                 <div
                     data-id="{{$id}}"
                     contenteditable="true"
+                    role="combobox"
+                    aria-expanded="false"
+                    aria-controls="roro-listbox-{{$id}}"
+                    aria-autocomplete="list"
+                    aria-haspopup="listbox"
+                    aria-activedescendant=""
+                    @if($label) aria-labelledby="label-{{$id}}" @endif
+                    @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
+                    aria-invalid="{{ $error ? 'true' : 'false' }}"
+                    @if($required) aria-required="true" @endif
                     placeholder="{{ $placeholder }}"
                     {{ $attributes->class([
                         'roro-select-text-input form-control d-flex flex-wrap align-items-center gap-1 pe-5',
@@ -38,12 +48,14 @@
                 <button
                     type="button"
                     class="roro-select-clear-button position-absolute top-0 bottom-0 end-0 d-flex align-items-center pe-3 border-0 bg-transparent text-secondary"
+                    aria-label="Clear selection"
+                    tabindex="-1"
                 >
                     ✕
                 </button>
             </div>
 
-            <div data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-white shadow overflow-auto" style="z-index:10; max-height:15rem;">
+            <div id="roro-listbox-{{$id}}" role="listbox" aria-multiselectable="true" @if($label) aria-labelledby="label-{{$id}}" @endif data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-white shadow overflow-auto" style="z-index:10; max-height:15rem;">
                 @include("roroform::components.{$theme}.select-options", ['options' => $options])
             </div>
 
@@ -56,5 +68,5 @@
         </div>
     </x-roro-border-error>
 
-    <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+    <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
 </div>

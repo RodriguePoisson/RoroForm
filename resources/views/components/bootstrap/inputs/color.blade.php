@@ -18,6 +18,9 @@
                 name="{{ $name }}"
                 id="{{ $id }}"
                 value="{{ $value }}"
+                @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
+                aria-invalid="{{ $error ? 'true' : 'false' }}"
+                @if($required) aria-required="true" @endif
                 {{ $disabled ? 'disabled' : '' }}
                 {{ $readonly ? 'readonly' : '' }}
                 {{ ($required && !$disableJsValidation) ? 'required' : '' }}
@@ -27,7 +30,7 @@
                 onchange="this.nextElementSibling.style.backgroundColor=this.value; this.nextElementSibling.nextElementSibling.value=this.value;"
             >
 
-            <label id="label-{{$id}}" for="{{ $id }}"
+            <label for="{{ $id }}"
                    class="roro-label roro-label-color rounded-circle border shadow"
                    style="height:3rem; width:3rem; cursor:pointer; background-color: {{ $value }};">
             </label>
@@ -37,10 +40,12 @@
                 style="@if($hideTextInput) display:none;@endif"
                 value="{{ $value }}"
                 readonly
+                aria-hidden="true"
+                tabindex="-1"
                 class="roro-input form-control flex-grow-1 bg-light text-body font-monospace user-select-none"
             >
         </div>
     </x-roro-border-error>
 
-    <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+    <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
 </div>

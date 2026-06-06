@@ -12,6 +12,7 @@
         name="{{ $name }}"
         id="{{ $id }}"
         value="{{ $value }}"
+        @if($required) aria-required="true" @endif
         {{ ($required && !$disableJsValidation) ? 'required' : '' }}
         @if($disabled)
             disabled

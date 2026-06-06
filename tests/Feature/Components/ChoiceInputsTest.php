@@ -128,10 +128,10 @@ it('checkbox omits required attribute when defaultJsValidation is off', function
     $html = $this->defaultJsValidation(false)
         ->render('<x-roro-checkbox name="agree" id="agree" :required="true" label="Agree"/>');
 
-    // The input itself must not carry the required attribute.
-    // (The label may still show a required marker via x-roro-required-label.)
+    // The input itself must not carry the native HTML required attribute.
+    // aria-required is fine; the label may also show a required marker via x-roro-required-label.
     $inputBlock = substr($html, strpos($html, 'type="checkbox"'), 300);
-    expect($inputBlock)->not->toContain('required');
+    expect($inputBlock)->not->toMatch('/(?<!\w)required(?!=)/');
 });
 
 it('checkbox emits disabled attribute when :disabled is true', function () {

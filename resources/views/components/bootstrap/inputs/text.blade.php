@@ -15,6 +15,9 @@
             id="{{ $id }}"
             value="{{ $value }}"
             placeholder="{{ $placeholder }}"
+            @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
+            aria-invalid="{{ $error ? 'true' : 'false' }}"
+            @if($required) aria-required="true" @endif
             @if($disabled)
                 disabled
             @endif
@@ -29,5 +32,5 @@
         >
     </x-roro-border-error>
 
-    <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+    <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
 </div>

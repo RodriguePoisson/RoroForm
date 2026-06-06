@@ -96,7 +96,7 @@ describe('number input', function () {
         );
 
         // The blade outputs '' when the condition is false — no "required" token.
-        expect($html)->not->toContain('required');
+        expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
     });
 
     it('repopulates value from old input', function () {
@@ -495,7 +495,7 @@ describe('color input', function () {
             '<x-roro-color name="c" id="c" :required="true"/>'
         );
 
-        expect($html)->not->toContain('required');
+        expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
     });
 
     it('shows validation error when present', function () {

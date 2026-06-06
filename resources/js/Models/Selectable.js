@@ -67,7 +67,7 @@ class Selectable extends Input {
     categories = [];
     options = [];
     optionsFiltered = [];
-    activeIndex = -1;       // keyboard-active option (a11y combobox)
+    activeOption = null;    // keyboard-active option, tracked by identity (a11y combobox)
     closeOnSelect = true;   // single select closes on pick; multi stays open
 
     constructor(id, prefixId = '', values = null) {
@@ -248,6 +248,11 @@ class Selectable extends Input {
             this.clearInput();
         });
 
+        // Close the dropdown once focus leaves the whole widget (Tab away, click
+        // outside, focus another field). Clicking an option does not blur the
+        // combobox (option rows are not focusable), so multi-select stays open.
+        RoroDom.on(this.selectWrapper, 'focusout', ev => this.handleFocusOut(ev));
+
         if (this.isA11y()) {
             RoroDom.on(this.textInput, 'keydown', ev => this.handleKeydown(ev));
         }
@@ -255,65 +260,91 @@ class Selectable extends Input {
 
     /**
      * ---------- Keyboard a11y (ARIA combobox) ----------
-     * Active only when the control is a role="combobox" (the raw theme). The
-     * Tailwind/Bootstrap themes don't carry the role yet, so they are untouched.
+     * Active whenever the control carries role="combobox". All three themes
+     * (raw, Tailwind, Bootstrap) now render it, so the keyboard navigation and
+     * ARIA state (aria-expanded / aria-activedescendant / aria-selected) apply
+     * everywhere. A control without the role stays untouched.
      */
     isA11y() {
         return !!(this.textInput && this.textInput.getAttribute
             && this.textInput.getAttribute('role') === 'combobox');
     }
 
-    // Options currently visible in the dropdown (skips filtered-out + templates).
+    // Options in LIVE VISUAL (DOM) order — visible, non-template. We deliberately
+    // do NOT trust this.options array order: an option added via addOption() into
+    // an existing category lands at the END of the array but MID-DOM, so the two
+    // orders diverge and Arrow keys would skip / reverse relative to what the user
+    // sees. DOM order is the source of truth.
     navOptions() {
-        return this.options.filter(o =>
-            o.elt && o.elt.style.display !== 'none' && !o.elt.closest('.roro-select-templates'));
+        const byElt = new Map(this.options.map(o => [o.elt, o]));
+        return RoroDom.qsa(this.dropdown, '.roro-select-option')
+            .filter(el => !el.closest('.roro-select-templates') && RoroDom.isVisible(el))
+            .map(el => byElt.get(el))
+            .filter(Boolean);
     }
 
     clearActive() {
         this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
-        this.activeIndex = -1;
+        this.activeOption = null;
         if (this.textInput) this.textInput.setAttribute('aria-activedescendant', '');
     }
 
-    setActive(index, list) {
-        const options = list || this.navOptions();
-        if (!options.length) return;
-        if (index < 0) index = options.length - 1;
-        if (index >= options.length) index = 0;
-
+    // Set the active option by identity (null clears). Keeps the highlight, the
+    // aria-activedescendant pointer and the scroll position in sync.
+    setActiveOption(option) {
         this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
-        this.activeIndex = index;
-        const opt = options[index];
-        opt.elt.classList.add('roro-option-active');
-        this.textInput.setAttribute('aria-activedescendant', opt.elt.id || '');
-        if (opt.elt.scrollIntoView) opt.elt.scrollIntoView({ block: 'nearest' });
+        this.activeOption = option || null;
+        if (!this.activeOption) {
+            if (this.textInput) this.textInput.setAttribute('aria-activedescendant', '');
+            return;
+        }
+        option.elt.classList.add('roro-option-active');
+        if (this.textInput) this.textInput.setAttribute('aria-activedescendant', option.elt.id || '');
+        if (option.elt.scrollIntoView) option.elt.scrollIntoView({ block: 'nearest' });
+    }
+
+    // Move the active option by `delta` (+1 down / -1 up) through the live list,
+    // wrapping at the ends. Recomputing the active option's position every time
+    // makes navigation immune to the list changing between keystrokes.
+    moveActive(delta) {
+        const list = this.navOptions();
+        if (!list.length) { this.setActiveOption(null); return; }
+        let i = this.activeOption ? list.findIndex(o => o.elt === this.activeOption.elt) : -1;
+        if (i === -1) i = delta >= 0 ? 0 : list.length - 1;
+        else i = (i + delta + list.length) % list.length;
+        this.setActiveOption(list[i]);
+    }
+
+    // Jump to the first (first=true) or last visible option.
+    setActiveEdge(first) {
+        const list = this.navOptions();
+        this.setActiveOption(first ? list[0] : list[list.length - 1]);
     }
 
     handleKeydown(ev) {
         const open = boolData(this.selectWrapper, 'show');
-        const options = this.navOptions();
 
         switch (ev.key) {
             case 'ArrowDown':
                 ev.preventDefault();
-                if (!open) { this.showDropDown(true); this.setActive(0, options); }
-                else this.setActive(this.activeIndex + 1, options);
+                if (!open) { this.showDropDown(true); this.setActiveEdge(true); }
+                else this.moveActive(1);
                 break;
             case 'ArrowUp':
                 ev.preventDefault();
-                if (!open) { this.showDropDown(true); this.setActive(options.length - 1, options); }
-                else this.setActive(this.activeIndex - 1, options);
+                if (!open) { this.showDropDown(true); this.setActiveEdge(false); }
+                else this.moveActive(-1);
                 break;
             case 'Home':
-                if (open) { ev.preventDefault(); this.setActive(0, options); }
+                if (open) { ev.preventDefault(); this.setActiveEdge(true); }
                 break;
             case 'End':
-                if (open) { ev.preventDefault(); this.setActive(options.length - 1, options); }
+                if (open) { ev.preventDefault(); this.setActiveEdge(false); }
                 break;
             case 'Enter':
-                if (open && this.activeIndex >= 0 && options[this.activeIndex]) {
+                if (open && this.activeOption) {
                     ev.preventDefault();
-                    this.handleOptionClick(options[this.activeIndex]);
+                    this.handleOptionClick(this.activeOption);
                     if (this.closeOnSelect) this.showDropDown(false);
                 }
                 break;
@@ -324,6 +355,24 @@ class Selectable extends Input {
                 if (open) this.showDropDown(false);
                 break;
         }
+    }
+
+    // Close the dropdown when focus leaves the whole widget. relatedTarget covers
+    // focus moving to another element (Tab, clicking another control); when it is
+    // null (blur to a non-focusable target, e.g. empty page area) we re-check
+    // document.activeElement on the next tick, once it has settled.
+    handleFocusOut(ev) {
+        const next = ev && ev.relatedTarget;
+        if (next) {
+            if (!this.selectWrapper.contains(next)) this.showDropDown(false);
+            return;
+        }
+        setTimeout(() => {
+            const active = typeof document !== 'undefined' ? document.activeElement : null;
+            if ((!active || !this.selectWrapper.contains(active)) && boolData(this.selectWrapper, 'show')) {
+                this.showDropDown(false);
+            }
+        }, 0);
     }
 
     /**

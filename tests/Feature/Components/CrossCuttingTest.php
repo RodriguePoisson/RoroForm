@@ -112,7 +112,7 @@ it('suppresses required on text input when defaultJsValidation is false', functi
 
     $html = $this->render('<x-roro-text name="title" id="title" :required="true" />');
 
-    expect($html)->not->toContain('required');
+    expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
 });
 
 it('emits required on select input when defaultJsValidation is true', function () {
@@ -128,7 +128,7 @@ it('suppresses required on select input when defaultJsValidation is false', func
 
     $html = $this->render('<x-roro-select name="color" id="color" :required="true" />');
 
-    expect($html)->not->toContain('required');
+    expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
 });
 
 it('does not emit required when required is false even with jsValidation on', function () {
@@ -138,7 +138,7 @@ it('does not emit required when required is false even with jsValidation on', fu
 
     // "required" as a standalone attribute must not appear (only disableJsValidation
     // affects it; when $required itself is false there is nothing to emit).
-    expect($html)->not->toContain('required');
+    expect($html)->not->toMatch('/(?<!\w)required(?!=)/');
 });
 
 // ──────────────────────────────────────────────────────────────────────────────

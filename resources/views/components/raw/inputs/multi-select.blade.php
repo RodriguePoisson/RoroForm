@@ -25,7 +25,6 @@
                 aria-controls="roro-listbox-{{$id}}"
                 aria-autocomplete="list"
                 aria-haspopup="listbox"
-                aria-multiselectable="true"
                 aria-activedescendant=""
                 @if($label) aria-labelledby="label-{{$id}}" @endif
                 @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif

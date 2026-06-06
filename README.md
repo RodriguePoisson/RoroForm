@@ -30,7 +30,8 @@ Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whol
 - **🪶 Zero dependencies.** The runtime is **vanilla JavaScript** — no jQuery, no framework, nothing to load on the page. Drop it into any stack (Livewire, Alpine, Inertia, Vue, React or plain Blade) without conflicts.
 - **🔎 Smart selects, server-rendered.** Searchable single & multi-selects with tags, option groups, and dynamic options — added client-side instantly or fetched from *your* JSON endpoint. Options render server-side, so there's no flash and no mandatory round-trip.
 - **🪄 Laravel-native by default.** Auto-repopulation from `old()`, per-field error messages pulled straight from `session('errors')`, CSRF, AJAX submit with server-side validation errors mapped back onto the right fields.
-- **🎨 Themeable.** Ships complete **Tailwind** and **Bootstrap** themes. Switch with one config line, or publish the Blade views and own the markup.
+- **🎨 Three themes — including no framework at all.** Ships **Tailwind**, **Bootstrap**, and a **framework-free `raw`** theme that brings its own stylesheet, so you get a clean modern look with **zero CSS framework** on the page. Switch with one config line; publish the views or the CSS to own them.
+- **♿ Accessible out of the box.** Every theme ships real labels, `aria-describedby` error wiring, `aria-invalid` / `aria-required`, fieldset/legend radio groups, and a full **ARIA combobox** for the custom selects — keyboard-navigable (↑↓, Enter, Escape, Home/End, type-ahead) and screen-reader friendly. Most packages' custom selects are mouse-only.
 - **📦 No build step for you.** The vanilla-JS runtime is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
 
 ---
@@ -386,6 +387,120 @@ form.field('email').focus();       // resolve a field by name **or** id
 </details>
 
 <details>
+<summary><strong>📋 Complete helper reference</strong></summary>
+
+<br>
+
+Every flat `roro*(id, …)` global is a one-liner shortcut for the matching `roro(id).method(…)` call — use whichever reads better. `id` is the component's `id` (or, for forms, the form id). Below is the **full** list.
+
+#### Entry points & introspection
+
+| Helper | What it returns / does | Example |
+|--------|------------------------|---------|
+| `roro(target)` | A type-aware handle (field or form); `target` is an id or a DOM element | `roro('email').focus()` |
+| `roro.field(id)` | A field handle (explicit) | `roro.field('email')` |
+| `roro.form(id)` | A form handle | `roro.form('signup')` |
+| `roro.select(id)` | The underlying `RoroSelect`/`RoroMultiSelect` instance | `roro.select('country')` |
+| `roro.repeatable(id)` | The underlying `RoroRepeatable` instance | `roro.repeatable('contacts')` |
+| `roro.exists(target)` | `true` if the field/form is in the DOM | `if (roro.exists('email')) …` |
+| `roro.all(root?)` | Handles for every field under `root` (default: document) | `roro.all().forEach(h => h.clear())` |
+| `roro.ready(fn)` | Run `fn` on DOM ready | `roro.ready(() => …)` |
+| `roro.version` | The runtime version string | `roro.version // '2.0.0'` |
+| `roroGetSelect(id)` | Same as `roro.select(id)` | `roroGetSelect('country')` |
+| `roroGetRepeatable(id)` | Same as `roro.repeatable(id)` | `roroGetRepeatable('contacts')` |
+
+#### Field value & state
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroValue(id, v?)` | Get (omit `v`) or set the value — type-aware | `roroValue('email', 'a@b.c')` · `roroValue('email')` |
+| `roroClear(id)` | Clear / reset the field | `roroClear('email')` |
+| `roroDisable(id, b=true)` | Disable (or enable with `false`) | `roroDisable('age')` |
+| `roroEnable(id)` | Enable | `roroEnable('age')` |
+| `roroReadonly(id, b=true)` | Toggle readonly | `roroReadonly('age')` |
+| `roroRequired(id, b=true)` | Toggle the HTML `required` flag | `roroRequired('email')` |
+| `roroShow(id)` / `roroHide(id)` | Show / hide the whole field (wrapper) | `roroHide('coupon')` |
+| `roroToggleVisibility(id, b?)` | Toggle visibility | `roroToggleVisibility('coupon', true)` |
+| `roroFocus(id)` | Focus the control | `roroFocus('email')` |
+| `roroLabel(id, text?)` | Get or set the label text | `roroLabel('email', 'E-mail')` |
+| `roroField(id)` | Get the field handle | `roroField('email').value()` |
+
+#### Errors
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroClearError(id)` | Hide the field's error | `roroClearError('email')` |
+| `roroShowError(id, msg, show=true)` | Show (or hide) an inline error + set `aria-invalid` | `roroShowError('email', 'Already taken')` |
+
+#### Events
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroOnChange(id, fn)` | Run `fn(value, event)` when the field changes | `roroOnChange('country', v => …)` |
+| `roroTrigger(id, event='change')` | Dispatch an event on the control | `roroTrigger('email', 'input')` |
+| `roroTriggerChangeAll()` | Fire `change` on every field | `roroTriggerChangeAll()` |
+
+#### Selects
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroAddOption(id, label, value, category?)` | Add one option (client-side) | `roroAddOption('c', 'France', 'fr', 'EU')` |
+| `roroAddOptions(id, list)` | Add a batch `[{label,value,category?}]` | `roroAddOptions('c', [{label:'Spain',value:'es'}])` |
+| `roroAddOptionsAjax(id, url, params?)` | Fetch options from your JSON endpoint → Promise | `roroAddOptionsAjax('c', '/api/countries', {q:'fr'})` |
+| `roroSetOptions(id, list)` | Replace **all** options | `roroSetOptions('c', list)` |
+| `roroRemoveOption(id, value)` | Remove one option | `roroRemoveOption('c', 'fr')` |
+| `roroClearOptions(id)` | Remove every option | `roroClearOptions('c')` |
+| `roroOptions(id)` | Read options `[{label,value,category}]` | `roroOptions('c')` |
+| `roroDisableSelect(id, b=true)` | Disable a custom select | `roroDisableSelect('c')` |
+| `roroReadonlySelect(id, b=true)` | Make a custom select readonly | `roroReadonlySelect('c')` |
+| `roroShowDropDown(id, show=true)` | Open / close the dropdown | `roroShowDropDown('c', true)` |
+
+#### Repeatables
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroAddRow(id, data?)` | Append a row (optionally prefilled) | `roroAddRow('contacts', {name:'Ada'})` |
+| `roroRemoveRow(id, index)` | Remove the row at a position | `roroRemoveRow('contacts', 0)` |
+| `roroClearRows(id)` | Remove every row | `roroClearRows('contacts')` |
+| `roroRows(id)` | Read all rows as data | `roroRows('contacts')` |
+| `roroRowsCount(id)` | Number of rows | `roroRowsCount('contacts')` |
+| `roroRow(id, target)` | A single-row handle (by key or position) | `roroRow('contacts', 12)` |
+| `roroRowField(id, target, name)` | A field handle inside one row | `roroRowField('contacts', 12, 'email')` |
+| `roroLockRow(id, target, b=true)` | Lock/unlock a row's remove button | `roroLockRow('contacts', 12)` |
+
+Row handles (`roroRow(...)` / `roro('contacts').row(...)`) expose: `field(name)` · `fields()` · `value(data?)` · `key()` · `index()` · `remove()` · `lockRemoval(b?)` · `allowRemoval()` · `isRemovable()` · `disable(b?)` · `enable()` · `moveUp()` · `moveDown()`.
+
+#### Forms
+
+| Helper | Does | Example |
+|--------|------|---------|
+| `roroFormData(formId)` | Serialize the form to a plain object | `roroFormData('signup')` |
+| `roroFillForm(formId, data)` | Prefill fields (by name, then id) | `roroFillForm('signup', user)` |
+| `roroSubmit(formId)` | Submit (honours the AJAX button) | `roroSubmit('signup')` |
+| `roroResetForm(formId)` | Native reset + clear custom selects | `roroResetForm('signup')` |
+| `roroClearForm(formId)` | Clear every field | `roroClearForm('signup')` |
+| `roroValidateForm(formId)` | `reportValidity()` → bool | `roroValidateForm('signup')` |
+| `roroFormErrors(formId, errors)` | Show server-side errors `{field:[msg]}` | `roroFormErrors('signup', {email:['Taken']})` |
+| `roroClearFormErrors(formId)` | Clear all form errors | `roroClearFormErrors('signup')` |
+| `roroOnSuccess(formId, fn)` | AJAX success → `fn(response, event)` | `roroOnSuccess('signup', r => …)` |
+| `roroOnError(formId, fn)` | AJAX error → `fn(xhr, event)` | `roroOnError('signup', x => …)` |
+
+#### Overlay & low-level
+
+| Helper | Does |
+|--------|------|
+| `roroShowOverlay(show=true)` | Show/hide the form's loading overlay |
+| `roroSubmitButton(buttonId, formId)` | Programmatically run a submit button's flow |
+| `roroRegisterButtonOnClick(buttonId)` | Wire a `.roro-btn-submit` (done automatically on load) |
+| `roroGetWrapper(id)` | The field's wrapper element |
+| `populateFormErrors(form, errors)` · `clearFormErrors(form)` | The error helpers `roroFormErrors`/`roroClearFormErrors` wrap |
+| `addSelect(el)` · `addMultiSelect(el)` · `addRepeatable(el)` | Register a freshly-inserted component (done automatically) |
+
+> All of the above are plain `window.*` globals — no import, no namespace. The chainable equivalents live on `roro(id)` (see the previous two sections).
+
+</details>
+
+<details>
 <summary><strong>🪄 Laravel-native validation, <code>old()</code> &amp; AJAX</strong></summary>
 
 <br>
@@ -429,10 +544,24 @@ $request->validate([
 Pick a theme once in `config/roroform.php`:
 
 ```php
-'theme' => 'tailwind', // or 'bootstrap'
+'theme' => 'tailwind', // 'bootstrap' | 'raw'
 ```
 
-Both **Tailwind** and **Bootstrap** themes ship complete and mirror each other component-for-component. (A framework-free `raw` theme is scaffolded for full custom styling but not yet complete — use Tailwind or Bootstrap for production.)
+Three themes ship complete, **accessible**, and component-for-component identical:
+
+| Theme | Styling |
+|-------|---------|
+| `tailwind` | TailwindCSS utility classes |
+| `bootstrap` | Bootstrap 5 classes |
+| `raw` | **Framework-free** — no Tailwind, no Bootstrap. Injects its own small stylesheet automatically, so you get a clean, modern look on **any** page with **zero CSS framework**. |
+
+The `raw` theme is themed with CSS custom properties — override `--roro-accent`, `--roro-radius`, `--roro-border`, … to restyle it, or publish the stylesheet:
+
+```bash
+php artisan vendor:publish --tag=roro-styles   # -> public/vendor/roroform/roroform.css
+```
+
+Every theme is accessible: proper `<label>`s, `aria-describedby` error association, `aria-invalid` / `aria-required`, `<fieldset>`/`<legend>` radio groups, and a keyboard-navigable **ARIA combobox** for the custom selects.
 
 Need to own the markup? Publish the Blade views and edit them in place:
 
@@ -459,18 +588,6 @@ renders `... data-testid="email" autocomplete="email" maxlength="120">` on the `
 
 </details>
 
-<details>
-<summary><strong>🏗️ How it works under the hood</strong></summary>
-
-<br>
-
-- **Component hierarchy.** `ComponentMain` → `InputMain` → each leaf (`Text`, `Select`, `Repeatable`, …). The base classes resolve the theme, repopulate from `old()`, and compute the error message; leaves only declare their props and view.
-- **Theme = a view directory.** A component renders `roroform::components.{theme}.{view}`. Themes are interchangeable sets of Blade views over the same PHP.
-- **Zero-build asset injection.** The JS lives as individually minified files in `resources/js/dist/`. `<x-roro-form>` injects them **once per page** via Blade stacks — your app needs no bundler. (Edit the sources under `resources/js/` and run `npm run build` only if you're hacking on the package itself.)
-- **Selects & repeatables are progressive enhancement.** Options and the row blueprint are rendered server-side; JS reads the existing DOM, clones it for new rows/options, regenerates ids, reindexes names (`prefix[i][field]`), and registers nested instances — so a cloned row behaves identically to one rendered on load.
-
-</details>
-
 ---
 
 ## Requirements
@@ -480,7 +597,7 @@ renders `... data-testid="email" autocomplete="email" maxlength="120">` on the `
 | **PHP** | `^8.0` |
 | **Laravel** | `9`, `10`, `11`, `12`, `13` |
 | **JavaScript** | none — the runtime is dependency-free vanilla JS |
-| **CSS** | Tailwind **or** Bootstrap, matching your `theme` config |
+| **CSS** | Tailwind, Bootstrap, **or none** — the `raw` theme ships its own stylesheet |
 
 ## Installation recap
 

@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    <x-roro-error :hidden="!$enableError" :error="$error"></x-roro-error>
+    <x-roro-error :id="'roro-error-'.$id" :hidden="!$enableError" :error="$error"></x-roro-error>
 
     {{-- Inert blueprint: the nested fields, cloned once per row by the JS. --}}
     <template class="roro-repeatable-template">{{ $slot }}</template>
