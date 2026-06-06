@@ -1,0 +1,25 @@
+name: Packagist
+
+# Tell Packagist to re-crawl the repo whenever `main` moves or a version tag is
+# pushed, so a new release shows up on packagist.org within seconds — no manual
+# "Update" click. Requires two repo secrets (Settings → Secrets and variables →
+# Actions):
+#   PACKAGIST_USERNAME  – your packagist.org username
+#   PACKAGIST_TOKEN     – the API token from https://packagist.org/profile/
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # Don't fail other people's forks that lack the secrets.
+    if: github.repository == 'RodriguePoisson/RoroForm'
+    steps:
+      - name: Notify Packagist
+        run: |
+          curl -sS -f -X POST \
+            -H 'Content-Type: application/json' \
+            "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}" \
+            -d '{"repository":{"url":"https://packagist.org/packages/roro/roroform"}}'

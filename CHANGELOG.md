@@ -6,9 +6,13 @@ All notable changes to RoroForm are documented here. The format is based on
 
 ## [2.0.0] — 2026-06-06
 
-The runtime is now **dependency-free vanilla JavaScript** — jQuery has been
-removed entirely. The whole change is covered by **814 automated tests**
-(Pest + Vitest), and CI runs them across PHP 8.2–8.4 and Laravel 11–12.
+A major release on three fronts: the runtime is now **dependency-free vanilla
+JavaScript** (jQuery removed entirely), the whole component set is **keyboard- and
+screen-reader-accessible**, and the UI is **fully responsive** — the same custom
+components on every device. The custom selects also gain an **in-dropdown search
+box** (single *and* multi), and repeatable rows gain **drag-and-drop reordering**.
+Covered by **870 automated tests** (Pest + Vitest); CI runs them across
+PHP 8.2–8.4 and Node 20/22.
 
 ### ⚠️ Breaking changes (front-end)
 
@@ -51,13 +55,28 @@ APIs, and every `window.roro*` one-liner keep working exactly as before.
 
 - **Zero runtime dependencies** — vanilla-JS runtime; drop it into Livewire,
   Alpine, Inertia, Vue, React or plain Blade without conflicts.
+- **Accessibility across every component & theme** — real `<label>`s,
+  `aria-describedby` error wiring, `aria-invalid` / `aria-required`,
+  fieldset/legend radio groups, `aria-live` error containers, labelled icon-only
+  buttons, and a full **ARIA combobox** for the custom selects: keyboard
+  navigation (↑↓, Home/End, Enter, Escape), `aria-activedescendant`, a visible
+  active-option highlight, and selects that close when focus leaves them.
+- **In-dropdown search box for selects** — both single and multi-select get a
+  dedicated search field at the top of the dropdown (the `searchBar` option, on by
+  default; customise with `searchPlaceholder`, disable with `:searchBar="false"`).
+- **Drag-and-drop reordering for repeatable rows** — `<x-roro-repeatable
+  reorder="drag">` (or `"both"`) adds a grab handle; the ▲▼ buttons remain the
+  keyboard/touch fallback.
+- **Responsive, touch-friendly UI** — one custom UI that adapts from desktop to
+  mobile (full-width controls, dropdowns/search that fit small screens, wrapping
+  tags and radio groups); no device-specific fallback.
 - **CSP nonce support** — set `config('roroform.nonce')` (a string, or a Closure
   resolved per request) and the injected `<script>` / `<style>` tags carry it.
   See `config/roroform.php`. (Inline `style="…"` *attributes* on toggled elements
   can't carry a nonce — allow `style-src 'unsafe-inline'` for those.)
 - **`mergeConfigFrom`** in the service provider — publishing the config is now
   optional; the packaged defaults always apply.
-- **A full automated test suite** (814 tests) — Pest + Orchestra Testbench for the
+- **A full automated test suite** (870 tests) — Pest + Orchestra Testbench for the
   Blade components, Vitest + jsdom for the runtime. See
   [`tests/README.md`](tests/README.md).
 - **GitHub Actions CI** running both suites across the supported matrix.
@@ -71,6 +90,12 @@ APIs, and every `window.roro*` one-liner keep working exactly as before.
   `name="tags[]"` input (it used to join the array into a single string).
 - Multi-select search now actually filters the options (it previously matched
   every option).
+- Custom selects are fully usable with the **mouse** again — clicking an option
+  reliably selects it (a focus-out race could swallow the click), and clicking in
+  a multi-select keeps the dropdown open.
+- Arrow-key navigation follows the **visual** option order — it no longer skips or
+  reverses when options live in groups or were added dynamically.
+- Repeatable **drag reordering** (lost in the vanilla rewrite) works again.
 
 ## [1.x] — the jQuery era
 

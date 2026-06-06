@@ -5,12 +5,12 @@
 </p>
 
 <p align="center">
-  25+ input components · searchable selects · repeatable groups that actually work · a chainable, type-aware JS API · Tailwind, Bootstrap &amp; framework-free themes — wired into Laravel's <code>old()</code>, validation errors and CSRF out of the box.
+  25+ input components · searchable selects · repeatable groups that actually work · a chainable, type-aware JS API · fully responsive &amp; accessible · Tailwind, Bootstrap &amp; framework-free themes — wired into Laravel's <code>old()</code>, validation errors and CSRF out of the box.
 </p>
 
 <p align="center">
   <a href="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml"><img src="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
-  <img src="https://img.shields.io/badge/tests-818%20passing-3fb950" alt="818 tests passing">
+  <img src="https://img.shields.io/badge/tests-870%20passing-3fb950" alt="870 tests passing">
   <img src="https://img.shields.io/badge/JS-zero%20dependencies-f7df1e?logo=javascript&logoColor=black" alt="Zero JS dependencies">
   <img src="https://img.shields.io/badge/PHP-%5E8.0-777BB4?logo=php&logoColor=white" alt="PHP ^8.0">
   <img src="https://img.shields.io/badge/Laravel-9%20%E2%86%92%2013-FF2D20?logo=laravel&logoColor=white" alt="Laravel 9 to 13">
@@ -31,7 +31,8 @@ Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whol
 - **🔎 Smart selects, server-rendered.** Searchable single & multi-selects with tags, option groups, and dynamic options — added client-side instantly or fetched from *your* JSON endpoint. Options render server-side, so there's no flash and no mandatory round-trip.
 - **🪄 Laravel-native by default.** Auto-repopulation from `old()`, per-field error messages pulled straight from `session('errors')`, CSRF, AJAX submit with server-side validation errors mapped back onto the right fields.
 - **🎨 Three themes — including no framework at all.** Ships **Tailwind**, **Bootstrap**, and a **framework-free `raw`** theme that brings its own stylesheet, so you get a clean modern look with **zero CSS framework** on the page. Switch with one config line; publish the views or the CSS to own them.
-- **♿ Accessible out of the box.** Every theme ships real labels, `aria-describedby` error wiring, `aria-invalid` / `aria-required`, fieldset/legend radio groups, and a full **ARIA combobox** for the custom selects — keyboard-navigable (↑↓, Enter, Escape, Home/End, type-ahead) and screen-reader friendly. Most packages' custom selects are mouse-only.
+- **♿ Accessible out of the box.** Every theme ships real labels, `aria-describedby` error wiring, `aria-invalid` / `aria-required`, fieldset/legend radio groups, and a full **ARIA combobox** for the custom selects — keyboard-navigable (↑↓, Enter, Escape, Home/End, search box) and screen-reader friendly. Most packages' custom selects are mouse-only.
+- **📱 Responsive & touch-friendly — the *same* UI on every device.** Components flow from desktop to mobile out of the box: full-width controls, dropdowns and search bars that fit small screens, tags and radio groups that wrap, and comfortable tap targets. There's **one custom UI everywhere** — no device-specific `<select>` fallback to second-guess, so what you test is what every visitor gets.
 - **📦 No build step for you.** The vanilla-JS runtime is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
 
 ---

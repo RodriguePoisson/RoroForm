@@ -1,0 +1,25 @@
+name: Release
+
+# Pushing a version tag (e.g. `v2.0.0`) creates the matching GitHub Release with
+# auto-generated notes. Packagist is updated in parallel by packagist.yml, so a
+# single `git push origin v2.0.0` ships the release end-to-end.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            See [`CHANGELOG.md`](https://github.com/RodriguePoisson/RoroForm/blob/main/CHANGELOG.md) for the full, curated notes.
