@@ -24,6 +24,7 @@ abstract class SelectableMain extends InputMain
         ?string $tooltip = null,
         public array $options = [],
         public bool $searchBar = true,
+        public string $searchPlaceholder = 'Search…',
         public bool $clearButton = true,
         public bool $optionsOpen = false,
         public array $values = [],

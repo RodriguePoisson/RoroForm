@@ -20,12 +20,14 @@
             <div
                 data-id="{{$id}}"
                 contenteditable="true"
-                role="combobox"
-                aria-expanded="false"
-                aria-controls="roro-listbox-{{$id}}"
-                aria-autocomplete="list"
-                aria-haspopup="listbox"
-                aria-activedescendant=""
+                @unless($searchBar)
+                    role="combobox"
+                    aria-expanded="false"
+                    aria-controls="roro-listbox-{{$id}}"
+                    aria-autocomplete="list"
+                    aria-haspopup="listbox"
+                    aria-activedescendant=""
+                @endunless
                 @if($label) aria-labelledby="label-{{$id}}" @endif
                 @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
                 aria-invalid="{{ $error ? 'true' : 'false' }}"
@@ -42,8 +44,28 @@
 
             <button type="button" class="roro-select-clear-button" aria-label="Clear selection" tabindex="-1">✕</button>
 
-            <div id="roro-listbox-{{$id}}" role="listbox" aria-multiselectable="true" @if($label) aria-labelledby="label-{{$id}}" @endif data-id="{{$id}}" class="roro-select-dropdown">
-                @include("roroform::components.{$theme}.select-options", ['options' => $options])
+            <div data-id="{{$id}}" class="roro-select-dropdown">
+                @if($searchBar)
+                    <div class="roro-select-search">
+                        <input
+                            type="text"
+                            data-id="{{$id}}"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="roro-listbox-{{$id}}"
+                            aria-autocomplete="list"
+                            aria-haspopup="listbox"
+                            aria-activedescendant=""
+                            aria-label="@if($label){{ 'Search '.$label }}@else{{ 'Search options' }}@endif"
+                            placeholder="{{ $searchPlaceholder }}"
+                            autocomplete="off"
+                            class="roro-select-search-input"
+                        >
+                    </div>
+                @endif
+                <div id="roro-listbox-{{$id}}" role="listbox" aria-multiselectable="true" @if($label) aria-labelledby="label-{{$id}}" @endif class="roro-select-listbox">
+                    @include("roroform::components.{$theme}.select-options", ['options' => $options])
+                </div>
             </div>
 
             {{-- Hidden templates cloned by the JS for dynamic adds (option/category/tag). --}}

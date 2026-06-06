@@ -77,8 +77,6 @@ class Selectable extends Input {
     optionsFiltered = [];
     activeOption = null;    // keyboard-active option, tracked by identity (a11y combobox)
     closeOnSelect = true;   // single select closes on pick; multi stays open
-    nativeMode = false;     // touch / coarse-pointer: a real <select> replaces the custom UI
-    nativeSelect = null;
 
     constructor(id, prefixId = '', values = null) {
         super('select', id, prefixId);
@@ -98,7 +96,6 @@ class Selectable extends Input {
         this.showDropDown();
         this.initValues();
         this.handleDisableReadonly();
-        this.maybeEnableNative();
         this._initializing = false;
         return this;
     }
@@ -144,7 +141,6 @@ class Selectable extends Input {
         const option = new RoroOption(optionEl);
         option.bindClick(this);
         this.options.push(option);
-        this.refreshNative();
         return option;
     }
 
@@ -167,7 +163,6 @@ class Selectable extends Input {
     removeOption(option) {
         this.options = this.options.filter(opt => opt.id !== option.id);
         option.elt.remove();
-        this.refreshNative();
     }
 
     static uid(prefix) {
@@ -183,7 +178,7 @@ class Selectable extends Input {
     }
 
     showFilteredOptions() {
-        const text = this.textInput.value || this.textInput.textContent;
+        const text = this.surfaceText();
         if (!text) {
             this.options.forEach(o => RoroDom.show(o.elt));
             return;
@@ -211,16 +206,18 @@ class Selectable extends Input {
         this.elt.style.pointerEvents = disable ? 'none' : 'auto';
         this.elt.dataset.disable = disable ? '1' : '0';
         if (this.textInput) this.textInput.disabled = disable;
+        if (this.searchInput) this.searchInput.disabled = disable;
         RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.disabled = disable; });
-        this.syncNativeEnabled();
     }
 
     readonly(readonly = true) {
         this.elt.style.pointerEvents = readonly ? 'none' : 'auto';
         this.elt.dataset.readonly = readonly ? '1' : '0';
-        if (this.textInput) this.textInput.readOnly = readonly;
+        // When a search box owns input, the text input is a read-only DISPLAY of the
+        // selection — leave it read-only regardless of the field's own readonly flag.
+        if (this.textInput && !this.searchInput) this.textInput.readOnly = readonly;
+        if (this.searchInput) this.searchInput.readOnly = readonly;
         RoroDom.qsa(this.elt, '.roro-input-hidden').forEach(h => { h.readOnly = readonly; });
-        this.syncNativeEnabled();
     }
 
     /**
@@ -231,18 +228,51 @@ class Selectable extends Input {
     get templates() { return (this._templates ??= RoroDom.qs(this.selectWrapper, '.roro-select-templates')); }
     get textInput() { return (this._textInput ??= RoroDom.qs(this.elt, '.roro-select-text-input')); }
 
+    // Optional in-dropdown search box. When present it IS the ARIA combobox and
+    // the keyboard surface; otherwise the text input plays both roles. (null is a
+    // valid cached result, so use an explicit-undefined check.)
+    get searchInput() {
+        if (this._searchInput === undefined) this._searchInput = RoroDom.qs(this.dropdown, '.roro-select-search-input');
+        return this._searchInput;
+    }
+    get keySurface() { return this.searchInput || this.textInput; }
+
+    // The live search/filter text from whichever surface holds it.
+    surfaceText() {
+        const t = this.keySurface;
+        if (!t) return '';
+        return t.value !== undefined ? t.value : (t.textContent || '');
+    }
+
     showDropDown(show) {
         if (show !== undefined) this.selectWrapper.dataset.show = show ? '1' : '0';
         const open = boolData(this.selectWrapper, 'show');
         if (open) RoroDom.show(this.dropdown); else RoroDom.hide(this.dropdown);
         if (this.isA11y()) {
-            this.textInput.setAttribute('aria-expanded', open ? 'true' : 'false');
+            this.keySurface.setAttribute('aria-expanded', open ? 'true' : 'false');
             if (!open) this.clearActive();
+        }
+        // With a dropdown search box: focus it on open (type immediately); clear
+        // the query on close so the next open starts from the full list.
+        if (this.searchInput) {
+            if (open) {
+                if (!this._initializing && this.searchInput.focus) {
+                    // Moving focus into the search box fires focusout on the tag
+                    // area; suppress the close for this transition so the list the
+                    // click just opened doesn't immediately snap shut (focus race).
+                    this._suppressClose = true;
+                    this.searchInput.focus();
+                    setTimeout(() => { this._suppressClose = false; }, 0);
+                }
+            } else if (this.searchInput.value) {
+                this.searchInput.value = '';
+                this.filterOptions('');
+                this.showFilteredOptions();
+            }
         }
     }
 
     toggleDropDown() {
-        if (this.nativeMode) return;   // native <select> owns its own popup
         roroShowDropDown(this.id.replace('roro-wrapper-', ''), !boolData(this.selectWrapper, 'show'));
     }
 
@@ -250,8 +280,11 @@ class Selectable extends Input {
      * ---------- Events ----------
      */
     bindBaseEvents() {
-        RoroDom.on(this.textInput, 'input', () => {
-            this.filterOptions((this.textInput.value || '') + (this.textInput.textContent || ''));
+        // Filtering is driven by the key surface (search box if present, else the
+        // text input). The search box gives a clean .value; the contenteditable
+        // falls back to textContent.
+        RoroDom.on(this.keySurface, 'input', () => {
+            this.filterOptions(this.surfaceText());
             this.showFilteredOptions();
             if (this.isA11y()) this.clearActive();
         });
@@ -264,20 +297,34 @@ class Selectable extends Input {
             this.clearInput();
         });
 
-        // Clicking inside the dropdown must NOT move focus off the combobox.
+        // Clicking inside the dropdown must NOT move focus off the key surface.
         // Otherwise the mousedown blurs it, the focus-out handler below closes the
         // list, and the option is hidden before its click lands — so the pick
-        // silently fails (mouse dead, keyboard fine). preventDefault on mousedown
-        // keeps focus put; the option's click still fires normally.
-        RoroDom.on(this.dropdown, 'mousedown', ev => ev.preventDefault());
+        // silently fails (mouse dead, keyboard fine). preventDefault keeps focus
+        // put; the search input is excluded so it stays clickable/focusable.
+        RoroDom.on(this.dropdown, 'mousedown', ev => {
+            if (!ev.target.closest('.roro-select-search-input')) ev.preventDefault();
+        });
 
         // Close the dropdown once focus leaves the whole widget (Tab away, click
-        // outside, focus another field). Clicking an option keeps the combobox
+        // outside, focus another field). Clicking an option keeps the surface
         // focused (mousedown default prevented above), so multi-select stays open.
         RoroDom.on(this.selectWrapper, 'focusout', ev => this.handleFocusOut(ev));
 
         if (this.isA11y()) {
-            RoroDom.on(this.textInput, 'keydown', ev => this.handleKeydown(ev));
+            RoroDom.on(this.keySurface, 'keydown', ev => this.handleKeydown(ev));
+            // When the search box owns the keyboard, the tag area still needs to
+            // OPEN the list from the keyboard; focus then drops into the search box.
+            if (this.searchInput && this.textInput && this.textInput !== this.keySurface) {
+                RoroDom.on(this.textInput, 'keydown', ev => {
+                    const k = ev.key;
+                    if (!boolData(this.selectWrapper, 'show') &&
+                        (k === 'ArrowDown' || k === 'ArrowUp' || k === 'Enter' || k === ' ')) {
+                        ev.preventDefault();
+                        this.showDropDown(true);
+                    }
+                });
+            }
         }
     }
 
@@ -289,8 +336,8 @@ class Selectable extends Input {
      * everywhere. A control without the role stays untouched.
      */
     isA11y() {
-        return !!(this.textInput && this.textInput.getAttribute
-            && this.textInput.getAttribute('role') === 'combobox');
+        const s = this.keySurface;
+        return !!(s && s.getAttribute && s.getAttribute('role') === 'combobox');
     }
 
     // Options in LIVE VISUAL (DOM) order — visible, non-template. We deliberately
@@ -309,20 +356,22 @@ class Selectable extends Input {
     clearActive() {
         this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
         this.activeOption = null;
-        if (this.textInput) this.textInput.setAttribute('aria-activedescendant', '');
+        const s = this.keySurface;
+        if (s) s.setAttribute('aria-activedescendant', '');
     }
 
     // Set the active option by identity (null clears). Keeps the highlight, the
-    // aria-activedescendant pointer and the scroll position in sync.
+    // aria-activedescendant pointer (on the focused key surface) and scroll in sync.
     setActiveOption(option) {
         this.options.forEach(o => o.elt.classList.remove('roro-option-active'));
         this.activeOption = option || null;
+        const s = this.keySurface;
         if (!this.activeOption) {
-            if (this.textInput) this.textInput.setAttribute('aria-activedescendant', '');
+            if (s) s.setAttribute('aria-activedescendant', '');
             return;
         }
         option.elt.classList.add('roro-option-active');
-        if (this.textInput) this.textInput.setAttribute('aria-activedescendant', option.elt.id || '');
+        if (s) s.setAttribute('aria-activedescendant', option.elt.id || '');
         if (option.elt.scrollIntoView) option.elt.scrollIntoView({ block: 'nearest' });
     }
 
@@ -345,7 +394,6 @@ class Selectable extends Input {
     }
 
     handleKeydown(ev) {
-        if (this.nativeMode) return;   // native <select> handles its own keyboard
         const open = boolData(this.selectWrapper, 'show');
 
         switch (ev.key) {
@@ -373,7 +421,13 @@ class Selectable extends Input {
                 }
                 break;
             case 'Escape':
-                if (open) { ev.preventDefault(); this.showDropDown(false); }
+                if (open) {
+                    ev.preventDefault();
+                    this.showDropDown(false);
+                    // The search box just got hidden — put focus back on the tag
+                    // area instead of letting it fall to <body>.
+                    if (this.searchInput && this.textInput && this.textInput.focus) this.textInput.focus();
+                }
                 break;
             case 'Tab':
                 if (open) this.showDropDown(false);
@@ -386,6 +440,7 @@ class Selectable extends Input {
     // null (blur to a non-focusable target, e.g. empty page area) we re-check
     // document.activeElement on the next tick, once it has settled.
     handleFocusOut(ev) {
+        if (this._suppressClose) return;   // a focus transition (open → search box) is in flight
         const next = ev && ev.relatedTarget;
         if (next) {
             if (!this.selectWrapper.contains(next)) this.showDropDown(false);
@@ -408,130 +463,6 @@ class Selectable extends Input {
 
     resetOptionMarkers() {
         this.options.forEach(o => o.unmark());
-    }
-
-    /**
-     * ---------- Native picker fallback (touch / coarse-pointer devices) -------
-     * On phones/tablets a real <select> gives the OS picker — better UX and full
-     * accessibility for free — so we swap the custom combobox for one. The native
-     * element carries NO name: it drives the same hidden input(s) on change, so
-     * form submission and the value model are identical to the desktop path.
-     * Gate: `(pointer: coarse)`. Force everywhere with window.roroForceNativeSelect
-     * = true; opt a single instance out with data-native="0" on its wrapper.
-     */
-    isMultiple() { return false; }   // MultiSelect overrides → true
-
-    prefersNativeSelect() {
-        if (this.selectWrapper && this.selectWrapper.dataset.native === '0') return false;
-        if (typeof window === 'undefined') return false;
-        if (window.roroForceNativeSelect) return true;
-        if (typeof window.matchMedia === 'function') {
-            try { return !!window.matchMedia('(pointer: coarse)').matches; } catch (e) { /* unsupported */ }
-        }
-        return false;
-    }
-
-    maybeEnableNative() {
-        if (this.prefersNativeSelect()) this.enableNativeMode();
-    }
-
-    enableNativeMode() {
-        if (this.nativeMode || !this.textInput) return;
-        this.nativeMode = true;
-        this.buildNativeSelect();
-        this.syncNativeFromState();
-        this.syncNativeEnabled();
-        // Hide the custom UI; the hidden submission input(s) stay in the DOM.
-        RoroDom.hide(this.textInput);
-        RoroDom.hide(this.dropdown);
-        const clear = RoroDom.qs(this.elt, '.roro-select-clear-button');
-        if (clear) RoroDom.hide(clear);
-    }
-
-    buildNativeSelect() {
-        if (this.nativeSelect) return this.nativeSelect;
-        const sel = document.createElement('select');
-        sel.className = 'roro-select-native';
-        sel.style.width = '100%';
-        if (this.isMultiple()) sel.multiple = true;
-        const inputId = this.id.replace('roro-wrapper-', '');
-        if (document.getElementById('label-' + inputId)) {
-            sel.setAttribute('aria-labelledby', 'label-' + inputId);
-        }
-        this.rebuildNativeOptions(sel);
-        RoroDom.on(sel, 'change', () => this.onNativeChange());
-        this.textInput.parentNode.insertBefore(sel, this.textInput);
-        this.nativeSelect = sel;
-        return sel;
-    }
-
-    // Mirror the dropdown's options/categories into <option>/<optgroup>, in live
-    // DOM (visual) order — the same source of truth as the keyboard navigation.
-    rebuildNativeOptions(sel) {
-        const target = sel || this.nativeSelect;
-        if (!target) return;
-        target.replaceChildren();
-        if (!this.isMultiple()) {
-            const ph = document.createElement('option');
-            ph.value = '';
-            ph.textContent = (this.textInput && this.textInput.getAttribute('placeholder')) || '';
-            target.appendChild(ph);
-        }
-        const byElt = new Map(this.options.map(o => [o.elt, o]));
-        const addOpt = (parent, el) => {
-            const ro = byElt.get(el);
-            if (!ro) return;
-            const o = document.createElement('option');
-            o.value = ro.value;
-            o.textContent = ro.label;
-            parent.appendChild(o);
-        };
-        RoroDom.children(this.dropdown).forEach(child => {
-            if (RoroDom.matches(child, '.roro-select-category')) {
-                const og = document.createElement('optgroup');
-                og.label = child.dataset.category || '';
-                RoroDom.qsa(child, '.roro-select-option').forEach(el => addOpt(og, el));
-                if (og.children.length) target.appendChild(og);
-            } else if (RoroDom.matches(child, '.roro-select-option')) {
-                addOpt(target, child);
-            }
-        });
-    }
-
-    syncNativeFromState() {
-        if (!this.nativeSelect) return;
-        if (this.isMultiple()) {
-            const vals = this.getValue() || [];
-            RoroDom.qsa(this.nativeSelect, 'option').forEach(o => { o.selected = vals.includes(o.value); });
-        } else {
-            const v = this.getValue();
-            this.nativeSelect.value = (v === null || v === undefined) ? '' : String(v);
-        }
-    }
-
-    onNativeChange() {
-        if (this.isMultiple()) {
-            this.values = RoroDom.qsa(this.nativeSelect, 'option').filter(o => o.selected).map(o => o.value);
-            this.setHiddenValue(this.values);
-            this.actualize();
-        } else {
-            const v = this.nativeSelect.value;
-            this.setOptionSelected(v === '' ? null : v);
-        }
-    }
-
-    // Native <select> has no readonly attribute: emulate it (and disabled) by
-    // disabling the element. Submission is unaffected — the hidden input carries
-    // the value and keeps its own readonly/disabled state.
-    syncNativeEnabled() {
-        if (this.nativeSelect) this.nativeSelect.disabled = this.isDisabled() || this.isReadonly();
-    }
-
-    // Keep the native <select> in step after the option set changes at runtime.
-    refreshNative() {
-        if (!this.nativeMode || !this.nativeSelect) return;
-        this.rebuildNativeOptions();
-        this.syncNativeFromState();
     }
 }
 
@@ -627,8 +558,6 @@ class MultiSelect extends Selectable {
     listTag = [];
     closeOnSelect = false;   // keep the listbox open while picking multiple
 
-    isMultiple() { return true; }
-
     constructor(id, name, values = []) {
         super(id, 'roro-wrapper', values);
         this.name = name;
@@ -716,14 +645,15 @@ class MultiSelect extends Selectable {
 
     filterOptions(filterText = '') {
         const needles = [filterText.toLowerCase().trim()];
-        // Only the live caret-zones inside the text input carry typed text; the
-        // .roro-select-templates copy is empty and would inject an '' needle that
-        // matches every option.
+        // Caret-zones carry inline-typed text (search-box-less mode). Empty ones
+        // must NOT contribute an '' needle — that would match every option.
         RoroDom.qsa(this.textInput, '.caret-zone').forEach(function (el) {
             needles.push((el.textContent || '').toLowerCase().trim());
         });
+        const active = needles.filter(n => n !== '');
+        if (!active.length) { this.optionsFiltered = this.options.slice(); return; }
         this.optionsFiltered = this.options.filter(option =>
-            needles.some(needle => (option.label ?? '').toLowerCase().trim().includes(needle))
+            active.some(needle => (option.label ?? '').toLowerCase().trim().includes(needle))
         );
     }
 

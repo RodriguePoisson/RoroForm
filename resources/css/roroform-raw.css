@@ -200,6 +200,38 @@ textarea.roro-input { min-height: 6rem; }
 .roro-select-option[aria-selected="true"] { font-weight: 600; color: var(--roro-accent-strong); }
 .roro-select-option-check { margin-left: auto; color: var(--roro-accent); }
 
+/* In-dropdown search bar (single + multi). Sticky above the options, on top of
+   any sticky category headers. */
+.roro-select-search {
+    position: sticky; top: 0; z-index: 2;
+    padding: .5rem;
+    background: var(--roro-bg);
+    border-bottom: 1px solid #e5e7eb;
+}
+.roro-select-search-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: .4375rem .75rem;
+    font-family: inherit;
+    font-size: .875rem;
+    line-height: 1.4;
+    color: var(--roro-text);
+    background: var(--roro-bg);
+    border: 1px solid var(--roro-border);
+    border-radius: var(--roro-radius);
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.roro-select-search-input::placeholder { color: #9ca3af; }
+.roro-select-search-input:hover { border-color: var(--roro-border-strong); }
+.roro-select-search-input:focus {
+    outline: 2px solid transparent;
+    border-color: var(--roro-accent);
+    box-shadow: 0 0 0 3px var(--roro-ring);
+}
+
 .roro-select-category-label {
     padding: .375rem .875rem;
     font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;

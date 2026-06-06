@@ -20,15 +20,19 @@
     <x-roro-border-error :hidden="!$error || !$enableError">
         <div class="w-100 position-relative">
             <div class="position-relative">
+                {{-- With a dropdown search bar the search input is the ARIA combobox;
+                     this field just displays the current selection (read-only). --}}
                 <input
                     data-id="{{$id}}"
                     type="text"
-                    role="combobox"
-                    aria-expanded="false"
-                    aria-controls="roro-listbox-{{$id}}"
-                    aria-autocomplete="list"
-                    aria-haspopup="listbox"
-                    aria-activedescendant=""
+                    @unless($searchBar)
+                        role="combobox"
+                        aria-expanded="false"
+                        aria-controls="roro-listbox-{{$id}}"
+                        aria-autocomplete="list"
+                        aria-haspopup="listbox"
+                        aria-activedescendant=""
+                    @endunless
                     @if($label) aria-labelledby="label-{{$id}}" @endif
                     @if($enableError) aria-describedby="roro-error-{{ $id }}" @endif
                     aria-invalid="{{ $error ? 'true' : 'false' }}"
@@ -38,9 +42,10 @@
                         'roro-select-text-input form-control pe-5',
                         $class,
                     ]) }}
+                    @if($searchBar) style="cursor:pointer;" @endif
                     {{ ($required && !$disableJsValidation)? 'required' : '' }}
                     @if($disabled) disabled @endif
-                    @if($readonly) readonly @endif
+                    @if($readonly || $searchBar) readonly @endif
                 >
 
                 <button
@@ -55,8 +60,28 @@
 
             <x-roro-hidden :disabled="$disabled" :readonly="$readonly" name="{{ $name }}" :id="$id" class="roro-select-hidden" :value="$value"></x-roro-hidden>
 
-            <div id="roro-listbox-{{$id}}" role="listbox" @if($label) aria-labelledby="label-{{$id}}" @endif data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-white shadow overflow-auto" style="z-index:10; max-height:15rem;">
-                @include("roroform::components.{$theme}.select-options", ['options' => $options])
+            <div data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-white shadow overflow-auto" style="z-index:10; max-height:15rem;">
+                @if($searchBar)
+                    <div class="roro-select-search position-sticky top-0 bg-white px-2 py-2 border-bottom" style="z-index:11;">
+                        <input
+                            type="text"
+                            data-id="{{$id}}"
+                            role="combobox"
+                            aria-expanded="false"
+                            aria-controls="roro-listbox-{{$id}}"
+                            aria-autocomplete="list"
+                            aria-haspopup="listbox"
+                            aria-activedescendant=""
+                            aria-label="@if($label){{ 'Search '.$label }}@else{{ 'Search options' }}@endif"
+                            placeholder="{{ $searchPlaceholder }}"
+                            autocomplete="off"
+                            class="roro-select-search-input form-control form-control-sm"
+                        >
+                    </div>
+                @endif
+                <div id="roro-listbox-{{$id}}" role="listbox" @if($label) aria-labelledby="label-{{$id}}" @endif class="roro-select-listbox">
+                    @include("roroform::components.{$theme}.select-options", ['options' => $options])
+                </div>
             </div>
 
             {{-- Hidden templates cloned by the JS for dynamic adds (option/category). --}}
