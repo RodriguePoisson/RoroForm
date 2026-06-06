@@ -31,7 +31,7 @@ const FILES = [
     'file.js',
     'Models/RoroRepeatable.js',
     'repeatable.js',
-];
+];//
 
 let scriptLoaded = false;
 
