@@ -28,14 +28,14 @@
     @endif
 
     {{-- One bordered panel around every row + the footer: reads as a single input. --}}
-    <div class="roro-repeatable-panel border rounded bg-white overflow-hidden">
+    <div class="roro-repeatable-panel border rounded bg-body overflow-hidden">
         <div class="roro-repeatable-empty px-3 py-4 text-center small text-muted" style="display:none;">
             {{ $placeholder ?: 'No items yet — add one below.' }}
         </div>
 
         <div class="roro-repeatable-rows"></div>
 
-        <div class="roro-repeatable-footer border-top bg-light px-3 py-2">
+        <div class="roro-repeatable-footer border-top bg-body-tertiary px-3 py-2">
             <button type="button"
                     class="roro-repeatable-add btn btn-sm btn-link text-decoration-none fw-semibold p-1 {{$class}}">
                 {!! $addLabel !!}

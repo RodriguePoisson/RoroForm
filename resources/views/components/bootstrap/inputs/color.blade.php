@@ -42,7 +42,7 @@
                 readonly
                 aria-hidden="true"
                 tabindex="-1"
-                class="roro-input form-control flex-grow-1 bg-light text-body font-monospace user-select-none"
+                class="roro-input form-control flex-grow-1 bg-body-tertiary text-body font-monospace user-select-none"
             >
         </div>
     </x-roro-border-error>

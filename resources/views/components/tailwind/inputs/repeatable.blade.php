@@ -19,7 +19,7 @@
      class="roro-wrapper roro-wrapper-repeatable w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
 
     @if($label)
-        <label id="label-{{$id}}" class="roro-label roro-label-repeatable block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
+        <label id="label-{{$id}}" class="roro-label roro-label-repeatable block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -28,16 +28,16 @@
     @endif
 
     {{-- One bordered panel around every row + the footer: reads as a single input. --}}
-    <div class="roro-repeatable-panel overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm">
-        <div class="roro-repeatable-empty px-4 py-6 text-center text-sm text-gray-400" style="display:none;">
+    <div class="roro-repeatable-panel overflow-hidden rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-sm">
+        <div class="roro-repeatable-empty px-4 py-6 text-center text-sm text-zinc-400 dark:text-zinc-500" style="display:none;">
             {{ $placeholder ?: 'No items yet — add one below.' }}
         </div>
 
         <div class="roro-repeatable-rows"></div>
 
-        <div class="roro-repeatable-footer border-t border-gray-200 bg-gray-50 px-3 py-2">
+        <div class="roro-repeatable-footer border-t border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2">
             <button type="button"
-                    class="roro-repeatable-add inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 {{$class}}">
+                    class="roro-repeatable-add inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold text-indigo-600 dark:text-indigo-400 transition hover:bg-indigo-50 dark:hover:bg-indigo-500/10 disabled:cursor-not-allowed disabled:opacity-50 {{$class}}">
                 {!! $addLabel !!}
             </button>
         </div>
@@ -50,25 +50,25 @@
 
     {{-- Inert row chrome: cloned per row, the blueprint is injected into .roro-repeatable-row-content. --}}
     <template class="roro-repeatable-row-template">
-        <div class="roro-repeatable-row group flex items-start gap-3 px-4 py-3.5 transition hover:bg-gray-50/60 {{$rowClass}}">
+        <div class="roro-repeatable-row group flex items-start gap-3 px-4 py-3.5 transition hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 {{$rowClass}}">
             @if($reorderDrag)
-                <span class="roro-repeatable-handle flex h-7 w-5 shrink-0 items-center justify-center pt-0.5 text-gray-300 transition hover:text-gray-500" aria-label="Drag to reorder" title="Drag to reorder">⠿</span>
+                <span class="roro-repeatable-handle flex h-7 w-5 shrink-0 items-center justify-center pt-0.5 text-zinc-300 dark:text-zinc-600 transition hover:text-zinc-500 dark:hover:text-zinc-400" aria-label="Drag to reorder" title="Drag to reorder">⠿</span>
             @endif
             <div class="roro-repeatable-row-body min-w-0 flex-1">
                 @if($itemLabel)
-                    <p class="roro-repeatable-row-label mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400"></p>
+                    <p class="roro-repeatable-row-label mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500"></p>
                 @endif
                 <div class="roro-repeatable-row-content"></div>
             </div>
             <div class="roro-repeatable-row-controls flex shrink-0 items-center gap-1 pt-0.5">
                 @if($reorderButtons)
                     <button type="button" aria-label="Move up"
-                            class="roro-repeatable-up flex h-7 w-7 items-center justify-center rounded-md text-xs text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30">▲</button>
+                            class="roro-repeatable-up flex h-7 w-7 items-center justify-center rounded-md text-xs text-zinc-400 dark:text-zinc-500 transition hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30">▲</button>
                     <button type="button" aria-label="Move down"
-                            class="roro-repeatable-down flex h-7 w-7 items-center justify-center rounded-md text-xs text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30">▼</button>
+                            class="roro-repeatable-down flex h-7 w-7 items-center justify-center rounded-md text-xs text-zinc-400 dark:text-zinc-500 transition hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:cursor-not-allowed disabled:opacity-30">▼</button>
                 @endif
                 <button type="button" aria-label="Remove"
-                        class="roro-repeatable-remove flex h-7 w-7 items-center justify-center rounded-md text-sm text-gray-400 transition hover:bg-red-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30">{!! $removeLabel ?: '✕' !!}</button>
+                        class="roro-repeatable-remove flex h-7 w-7 items-center justify-center rounded-md text-sm text-zinc-400 dark:text-zinc-500 transition hover:bg-red-100 dark:hover:bg-red-500/15 hover:text-red-600 dark:hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30">{!! $removeLabel ?: '✕' !!}</button>
             </div>
         </div>
     </template>

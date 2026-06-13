@@ -4,7 +4,7 @@
 
     @if($label)
         <label id="label-{{$id}}" for="{{ $id }}"
-               class="roro-label roro-label-file block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
+               class="roro-label roro-label-file block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 {{$labelClass}}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>
@@ -13,12 +13,12 @@
     @endif
 
     <x-roro-border-error :hidden="!$error || !$enableError">
-        <div class="roro-drop-zone drop-zone flex flex-col items-center justify-center gap-1 w-full h-32 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 cursor-pointer transition hover:border-blue-400 hover:bg-blue-50 relative {{$class}}">
+        <div class="roro-drop-zone drop-zone flex flex-col items-center justify-center gap-1 w-full h-32 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 cursor-pointer transition hover:border-indigo-400 hover:bg-indigo-50 dark:hover:border-indigo-500 dark:hover:bg-indigo-500/10 relative {{$class}}">
 
-            <span class="font-medium text-gray-700">
+            <span class="font-medium text-zinc-700 dark:text-zinc-300">
                 {{ $placeholder}}
             </span>
-            <span class="text-xs text-gray-500 mt-1">
+            <span class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 {{ $requirementsText}}
             </span>
 
@@ -42,12 +42,12 @@
         </div>
     </x-roro-border-error>
 
-    <p class="roro-file-name-container mt-2 text-sm text-gray-700">
+    <p class="roro-file-name-container mt-2 text-sm text-zinc-700 dark:text-zinc-300">
         <span style="display: none;"
-            class="roro-file-name inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mr-2 mt-1">
+            class="roro-file-name inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 text-sm font-medium mr-2 mt-1">
             <span class="roro-file-name-text"></span>
             <button type="button" aria-label="Remove"
-                    class="roro-file-name-delete ml-2 text-blue-500 hover:text-blue-700 focus:outline-none">
+                    class="roro-file-name-delete ml-2 text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 focus:outline-none">
                 ✕
             </button>
         </span>

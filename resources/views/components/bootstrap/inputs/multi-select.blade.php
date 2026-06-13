@@ -59,9 +59,9 @@
                 </button>
             </div>
 
-            <div data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-white shadow overflow-auto" style="z-index:10; max-height:15rem;">
+            <div data-id="{{$id}}" class="roro-select-dropdown position-absolute mt-1 w-100 rounded border bg-body shadow overflow-auto" style="z-index:10; max-height:15rem;">
                 @if($searchBar)
-                    <div class="roro-select-search position-sticky top-0 bg-white px-2 py-2 border-bottom" style="z-index:11;">
+                    <div class="roro-select-search position-sticky top-0 bg-body px-2 py-2 border-bottom" style="z-index:11;">
                         <input
                             type="text"
                             data-id="{{$id}}"

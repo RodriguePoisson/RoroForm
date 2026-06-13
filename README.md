@@ -700,11 +700,20 @@ Pick a theme once in `config/roroform.php`:
 
 Three themes ship complete, **accessible**, and component-for-component identical:
 
-| Theme | Styling |
-|-------|---------|
-| `tailwind` | TailwindCSS utility classes |
-| `bootstrap` | Bootstrap 5 classes |
-| `raw` | **Framework-free** — no Tailwind, no Bootstrap. Injects its own small stylesheet automatically, so you get a clean, modern look on **any** page with **zero CSS framework**. |
+| Theme | Styling | Dark mode trigger |
+|-------|---------|-------------------|
+| `tailwind` | TailwindCSS utility classes | `dark:` utilities — `.dark` class (or `prefers-color-scheme`, per your Tailwind `darkMode` config) |
+| `bootstrap` | Bootstrap 5 classes | `data-bs-theme="dark"` on an ancestor |
+| `raw` | **Framework-free** — no Tailwind, no Bootstrap. Injects its own small stylesheet automatically, so you get a clean, modern look on **any** page with **zero CSS framework**. | `.dark` class or `data-roro-theme="dark"` on an ancestor |
+
+**All three themes are fully dark-mode aware** — every component remaps colors, borders, backgrounds and contrast in dark mode. Each is driven by a class/attribute on an ancestor (usually `<html>`), so you stay in control. To follow the OS setting, map it once:
+
+```js
+if (matchMedia('(prefers-color-scheme: dark)').matches)
+    document.documentElement.classList.add('dark'); // or data-bs-theme="dark"
+```
+
+Test it on the playground — click the **Dark mode** toggle to switch.
 
 The `raw` theme is themed with CSS custom properties — override `--roro-accent`, `--roro-radius`, `--roro-border`, … to restyle it, or publish the stylesheet:
 
@@ -712,7 +721,7 @@ The `raw` theme is themed with CSS custom properties — override `--roro-accent
 php artisan vendor:publish --tag=roro-styles   # -> public/vendor/roroform/roroform.css
 ```
 
-Every theme is accessible: proper `<label>`s, `aria-describedby` error association, `aria-invalid` / `aria-required`, `<fieldset>`/`<legend>` radio groups, and a keyboard-navigable **ARIA combobox** for the custom selects.
+Every theme is accessible: proper `<label>`s, `aria-describedby` error association, `aria-invalid` / `aria-required`, `<fieldset>`/`<legend>` radio groups, and a keyboard-navigable **ARIA combobox** for the custom selects. All components adapt to dark mode — no configuration needed.
 
 Need to own the markup? Publish the Blade views and edit them in place:
 

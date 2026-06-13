@@ -19,14 +19,14 @@
             readonly
         @endif
         {{ $attributes->class([
-            'roro-input roro-input-radio h-4 w-4 appearance-none rounded-full border border-gray-300 bg-white transition checked:border-[5px] checked:border-blue-600 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-200',
+            'roro-input roro-input-radio h-4 w-4 appearance-none rounded-full border border-zinc-300 bg-white transition checked:border-[5px] checked:border-indigo-600 hover:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-zinc-500',
             $class,
         ]) }}
         @if($checked) checked @endif
     >
 
     @if($label)
-        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-radio cursor-pointer select-none text-sm font-medium text-gray-700 {{ $labelClass }}">
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-radio cursor-pointer select-none text-sm font-medium text-zinc-700 dark:text-zinc-300 {{ $labelClass }}">
             {{ $label }}
             @if($required)
                 <x-roro-required-label></x-roro-required-label>

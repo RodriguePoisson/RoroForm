@@ -60,7 +60,14 @@ window.roroRegisterButtonOnClick = function (buttonId) {
 
     RoroDom.on(button, 'click', function (event) {
         event.preventDefault();
-        roroSubmitButton(button.id, button.dataset.formId);
+        // Fall back to the enclosing <form> when no explicit form-id is given, so a
+        // submit button nested in <x-roro-form> works without manually wiring form-id.
+        let formId = button.dataset.formId;
+        if (!formId) {
+            const parentForm = button.closest('form');
+            formId = parentForm ? parentForm.id : null;
+        }
+        roroSubmitButton(button.id, formId);
     });
 };
 

@@ -23,6 +23,13 @@
     --roro-bg-soft: #f9fafb;
     --roro-danger: #dc2626;
     --roro-danger-soft: #fef2f2;
+    /* secondary tokens (all remapped in the dark-mode block at the bottom) */
+    --roro-text-2: #374151;
+    --roro-placeholder: #9ca3af;
+    --roro-border-soft: #e5e7eb;
+    --roro-bg-muted: #f3f4f6;
+    --roro-divider: rgba(0, 0, 0, .08);
+    --roro-handle: #cbd5e1;
     --roro-radius: 8px;
     --roro-radius-lg: 12px;
     --roro-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -50,7 +57,7 @@
     margin-bottom: .375rem;
     font-size: .875rem;
     font-weight: 600;
-    color: #374151;
+    color: var(--roro-text-2);
 }
 .roro-required { color: var(--roro-danger); margin-left: .125rem; }
 
@@ -78,7 +85,7 @@ input.roro-input:not([type=checkbox]):not([type=radio]):not([type=range]):not([t
     appearance: none;
 }
 .roro-input::placeholder,
-.roro-select-text-input:empty::before { color: #9ca3af; }
+.roro-select-text-input:empty::before { color: var(--roro-placeholder); }
 
 .roro-input:hover:not(:disabled),
 .roro-select-text-input:hover { border-color: var(--roro-border-strong); }
@@ -99,7 +106,7 @@ input.roro-input:not([type=checkbox]):not([type=radio]):not([type=range]):not([t
 
 .roro-input:disabled,
 .roro-select-text-input[disabled] {
-    background: #f3f4f6;
+    background: var(--roro-bg-muted);
     color: var(--roro-muted);
     cursor: not-allowed;
 }
@@ -132,7 +139,7 @@ textarea.roro-input { min-height: 6rem; }
 .roro-wrapper-radio-container > legend,
 .roro-wrapper-radio-container legend {
     padding: 0; margin-bottom: .5rem;
-    font-size: .875rem; font-weight: 600; color: #374151;
+    font-size: .875rem; font-weight: 600; color: var(--roro-text-2);
 }
 .roro-radio-subtitle { margin: 0 0 .5rem; font-size: .8125rem; color: var(--roro-muted); }
 .roro-radio-group { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; }
@@ -183,7 +190,7 @@ textarea.roro-input { min-height: 6rem; }
     margin-top: .25rem;
     max-height: 15rem; overflow-y: auto;
     background: var(--roro-bg);
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--roro-border-soft);
     border-radius: var(--roro-radius);
     box-shadow: 0 10px 25px rgba(0, 0, 0, .12);
 }
@@ -191,7 +198,7 @@ textarea.roro-input { min-height: 6rem; }
 .roro-select-option {
     position: relative;
     padding: .5rem .875rem;
-    font-size: .875rem; color: #374151;
+    font-size: .875rem; color: var(--roro-text-2);
     cursor: pointer;
 }
 .roro-select-option:hover,
@@ -206,7 +213,7 @@ textarea.roro-input { min-height: 6rem; }
     position: sticky; top: 0; z-index: 2;
     padding: .5rem;
     background: var(--roro-bg);
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--roro-border-soft);
 }
 .roro-select-search-input {
     display: block;
@@ -224,7 +231,7 @@ textarea.roro-input { min-height: 6rem; }
     appearance: none;
     transition: border-color .15s, box-shadow .15s;
 }
-.roro-select-search-input::placeholder { color: #9ca3af; }
+.roro-select-search-input::placeholder { color: var(--roro-placeholder); }
 .roro-select-search-input:hover { border-color: var(--roro-border-strong); }
 .roro-select-search-input:focus {
     outline: 2px solid transparent;
@@ -281,13 +288,13 @@ textarea.roro-input { min-height: 6rem; }
 .roro-repeatable-panel { border: 1px solid var(--roro-border); border-radius: var(--roro-radius-lg); background: var(--roro-bg); overflow: hidden; }
 .roro-repeatable-empty { padding: 1.5rem; text-align: center; color: var(--roro-muted); font-size: .875rem; }
 .roro-repeatable-row { display: flex; align-items: flex-start; gap: .75rem; padding: .875rem 1rem; }
-.roro-repeatable-rows > .roro-repeatable-row + .roro-repeatable-row { border-top: 1px solid rgba(0, 0, 0, .08); }
+.roro-repeatable-rows > .roro-repeatable-row + .roro-repeatable-row { border-top: 1px solid var(--roro-divider); }
 .roro-repeatable-row-body { flex: 1; min-width: 0; }
 .roro-repeatable-row-label { margin: 0 0 .5rem; font-size: .6875rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--roro-muted); }
 .roro-repeatable-row-content > * { margin-top: .65rem; }
 .roro-repeatable-row-content > *:first-child { margin-top: 0; }
 .roro-repeatable-controls { display: flex; gap: .25rem; padding-top: .125rem; }
-.roro-repeatable-footer { padding: .5rem .75rem; background: var(--roro-bg-soft); border-top: 1px solid #e5e7eb; }
+.roro-repeatable-footer { padding: .5rem .75rem; background: var(--roro-bg-soft); border-top: 1px solid var(--roro-border-soft); }
 .roro-repeatable-add { color: var(--roro-accent); background: transparent; border: 0; padding: .375rem .75rem; border-radius: var(--roro-radius); font-weight: 600; font-size: .875rem; cursor: pointer; }
 .roro-repeatable-add:hover:not(:disabled) { background: var(--roro-accent-soft); }
 .roro-repeatable-up,
@@ -300,11 +307,11 @@ textarea.roro-input { min-height: 6rem; }
 }
 .roro-repeatable-remove:hover:not(:disabled) { background: var(--roro-danger-soft); color: var(--roro-danger); }
 .roro-repeatable-up:hover:not(:disabled),
-.roro-repeatable-down:hover:not(:disabled) { background: #f3f4f6; color: var(--roro-text); }
+.roro-repeatable-down:hover:not(:disabled) { background: var(--roro-bg-muted); color: var(--roro-text); }
 .roro-repeatable-disabled,
 .roro-repeatable-add:disabled,
 .roro-repeatable-remove:disabled { opacity: .35; cursor: not-allowed; }
-.roro-repeatable-handle { cursor: grab; user-select: none; line-height: 1; color: #cbd5e1; }
+.roro-repeatable-handle { cursor: grab; user-select: none; line-height: 1; color: var(--roro-handle); }
 
 /* ----- overlay / spinner --------------------------------------------------- */
 #roro-form-overlay {
@@ -319,4 +326,36 @@ textarea.roro-input { min-height: 6rem; }
 @media (prefers-reduced-motion: reduce) {
     .roro-input, .roro-btn, .roro-drop-zone, .roro-select-text-input { transition: none; }
     #roro-form-overlay svg animate { display: none; }
+}
+
+/* ----- dark mode ----------------------------------------------------------- */
+/* Opt in with a `.dark` class or a `data-bs-theme="dark"` / `data-roro-theme="dark"`
+   attribute on any ancestor (usually <html>). Map the OS preference to one of
+   these to follow prefers-color-scheme:
+     if (matchMedia('(prefers-color-scheme: dark)').matches)
+         document.documentElement.classList.add('dark');
+   Every .roro-* rule reads from the custom properties, so remapping the tokens
+   is all that's needed — nothing else changes. */
+.dark,
+[data-bs-theme="dark"],
+[data-roro-theme="dark"] {
+    /* keep the raw theme's own blue identity, lightened for dark surfaces */
+    --roro-accent: #3b82f6;
+    --roro-accent-strong: #60a5fa;
+    --roro-accent-soft: rgba(59, 130, 246, .16);
+    --roro-ring: rgba(59, 130, 246, .40);
+    --roro-text: #f4f4f5;
+    --roro-text-2: #d4d4d8;
+    --roro-muted: #a1a1aa;
+    --roro-placeholder: #71717a;
+    --roro-border: #3f3f46;
+    --roro-border-strong: #52525b;
+    --roro-border-soft: #27272a;
+    --roro-bg: #09090b;
+    --roro-bg-soft: #18181b;
+    --roro-bg-muted: #27272a;
+    --roro-divider: rgba(255, 255, 255, .08);
+    --roro-handle: #52525b;
+    --roro-danger: #f87171;
+    --roro-danger-soft: rgba(248, 113, 113, .14);
 }

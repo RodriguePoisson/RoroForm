@@ -13,7 +13,7 @@
     @endif
 
     <x-roro-border-error :hidden="!$error || !$enableError">
-        <div class="roro-drop-zone drop-zone d-flex flex-column align-items-center justify-content-center gap-1 w-100 rounded border border-2 bg-light position-relative {{$class}}"
+        <div class="roro-drop-zone drop-zone d-flex flex-column align-items-center justify-content-center gap-1 w-100 rounded border border-2 bg-body-tertiary position-relative {{$class}}"
              style="height:8rem; cursor:pointer; border-style:dashed !important;">
 
             <span class="fw-medium text-body">

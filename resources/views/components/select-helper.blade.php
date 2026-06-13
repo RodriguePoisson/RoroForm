@@ -12,7 +12,8 @@
                 @if($theme === 'bootstrap')
                 .roro-select-option.roro-option-active { background-color: var(--bs-primary-bg-subtle, rgba(13, 110, 253, .1)); box-shadow: inset 2px 0 0 var(--bs-primary, #0d6efd); }
                 @else
-                .roro-select-option.roro-option-active { background-color: #eff6ff; box-shadow: inset 2px 0 0 #3b82f6; }
+                .roro-select-option.roro-option-active { background-color: #eef2ff; box-shadow: inset 2px 0 0 #6366f1; }
+                .dark .roro-select-option.roro-option-active { background-color: rgba(99, 102, 241, .15); box-shadow: inset 2px 0 0 #818cf8; }
                 @endif
             </style>
         @endif

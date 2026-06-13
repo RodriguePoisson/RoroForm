@@ -16,6 +16,11 @@
         .roro-repeatable-row[data-roro-locked="1"] .roro-repeatable-remove { cursor: not-allowed; }
         .roro-repeatable-handle { cursor: grab; user-select: none; line-height: 1; }
         .roro-repeatable-row.roro-repeatable-dragging { opacity: .45; cursor: grabbing; }
-        .roro-repeatable-row.roro-repeatable-drag-over { background: rgba(59, 130, 246, .06); }
+        .roro-repeatable-row.roro-repeatable-drag-over { background: rgba(99, 102, 241, .08); }
+
+        /* Dark mode — works whichever theme is active (.dark = Tailwind/raw,
+           data-bs-theme = Bootstrap, data-roro-theme = raw opt-in). */
+        :is(.dark, [data-bs-theme="dark"], [data-roro-theme="dark"]) .roro-repeatable-rows > .roro-repeatable-row + .roro-repeatable-row { border-top-color: rgba(255, 255, 255, .10); }
+        :is(.dark, [data-bs-theme="dark"], [data-roro-theme="dark"]) .roro-repeatable-row.roro-repeatable-drag-over { background: rgba(99, 102, 241, .18); }
     </style>
 @endonce

@@ -1,7 +1,7 @@
 <div id="roro-wrapper-{{$id}}" style="@if($hidden) display:none; @endif"
      class="roro-wrapper roro-wrapper-text w-full {{$wrapperClass}} @if($hasTopMargins) mt-6 @endif">
     @if($label)
-        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-text block text-sm font-medium text-gray-700 mb-1.5 {{$labelClass}}">
+        <label id="label-{{$id}}" for="{{ $id }}" class="roro-label roro-label-text block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 {{$labelClass}}">
             {{ $label }} @if($required)
                 <x-roro-required-label></x-roro-required-label>
             @endif
@@ -26,7 +26,7 @@
             @endif
             {{ ($required && !$disableJsValidation)? 'required' : '' }}
             {{ $attributes->class([
-                'roro-input roro-input-text block w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500',
+                'roro-input roro-input-text block w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder-zinc-500 dark:disabled:bg-zinc-800',
                 $class,
             ]) }}
         >
