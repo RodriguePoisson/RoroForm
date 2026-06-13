@@ -82,13 +82,7 @@ abstract class InputMain extends ComponentMain
 
     protected function getError(): void
     {
-        // Classic Laravel flashes the error bag to the session; Livewire shares it to
-        // the view (as $errors) without touching the session. Support both so the
-        // components display validation errors in either stack.
-        $errors = session('errors') ?: view()->shared('errors');
-
-        $this->error = ($errors && method_exists($errors, 'first'))
-            ? $errors->first($this->normalizeOldName($this->name))
-            : '';
+        $errors = session('errors');
+        $this->error = $errors ? $errors->first($this->normalizeOldName($this->name)) : '';
     }
 }
