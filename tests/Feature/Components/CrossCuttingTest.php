@@ -172,10 +172,10 @@ it('tailwind text input control uses Tailwind-specific classes', function () {
 
     $html = $this->render('<x-roro-text name="t" id="t" />');
 
-    // Tailwind template uses rounded-lg, bootstrap uses form-control.
+    // Tailwind template uses rounded-xl, bootstrap uses form-control.
     expect($html)
         ->toContain('roro-input-text')
-        ->toContain('rounded-lg')
+        ->toContain('rounded-xl')
         ->not->toContain('form-control');
 });
 
@@ -187,7 +187,7 @@ it('bootstrap text input control uses form-control class', function () {
     expect($html)
         ->toContain('roro-input-text')
         ->toContain('form-control')
-        ->not->toContain('rounded-lg');
+        ->not->toContain('rounded-xl');
 });
 
 it('tailwind checkbox wrapper uses flex items-center gap-2 by default', function () {
@@ -217,7 +217,7 @@ it('tailwind select text-input uses Tailwind focus ring classes', function () {
 
     expect($html)
         ->toContain('roro-select-text-input')
-        ->toContain('focus:ring-blue-200');
+        ->toContain('focus:ring-indigo-500/30');
 });
 
 it('bootstrap select text-input uses form-control class', function () {
