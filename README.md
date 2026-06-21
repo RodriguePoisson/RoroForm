@@ -9,6 +9,16 @@
 </p>
 
 <p align="center">
+  <img src="docs/demo.gif" alt="RoroForm — adding a repeatable contact group, picking from a searchable select, tagging skills and reordering rows" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://playground.elcervo.com/"><strong>▶ Live playground</strong></a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#-documentation">Docs</a>
+</p>
+
+<p align="center">
   <a href="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml"><img src="https://github.com/RodriguePoisson/RoroForm/actions/workflows/tests.yml/badge.svg" alt="tests"></a>
   <img src="https://img.shields.io/badge/tests-870%20passing-3fb950" alt="870 tests passing">
   <img src="https://img.shields.io/badge/JS-zero%20dependencies-f7df1e?logo=javascript&logoColor=black" alt="Zero JS dependencies">
@@ -34,6 +44,23 @@ Most Laravel form helpers stop at rendering an `<input>`. RoroForm goes the whol
 - **♿ Accessible out of the box.** Every theme ships real labels, `aria-describedby` error wiring, `aria-invalid` / `aria-required`, fieldset/legend radio groups, and a full **ARIA combobox** for the custom selects — keyboard-navigable (↑↓, Enter, Escape, Home/End, search box) and screen-reader friendly. Most packages' custom selects are mouse-only.
 - **📱 Responsive & touch-friendly — the *same* UI on every device.** Components flow from desktop to mobile out of the box: full-width controls, dropdowns and search bars that fit small screens, tags and radio groups that wrap, and comfortable tap targets. There's **one custom UI everywhere** — no device-specific `<select>` fallback to second-guess, so what you test is what every visitor gets.
 - **📦 No build step for you.** The vanilla-JS runtime is injected inline the first time a form renders. No npm, no Vite config, no bundler in *your* app.
+
+---
+
+## RoroForm vs. the alternatives
+
+If you've shopped for Laravel form tooling, you've met the usual options. Here's where RoroForm sits:
+
+| Feature | **RoroForm** | Collective / Spatie helpers | Filament / Livewire |
+|---|:---:|:---:|:---:|
+| Nested repeatable groups (selects & files inside) | ✅ just works | ❌ | ⚠️ heavy stack |
+| Runtime JS API to drive fields | ✅ chainable, type-aware | ❌ | ⚠️ partial |
+| JS dependencies | **none** | varies | full framework |
+| Works in plain Blade / any stack | ✅ | ✅ | ❌ tied to their runtime |
+| Zero-CSS-framework option | ✅ `raw` theme | ❌ | ❌ |
+| Searchable, accessible custom selects | ✅ ARIA combobox | ❌ | ✅ |
+
+> Laravel Collective's `Form`/`Html` package is archived; Filament and Livewire are excellent, but they pull in a full reactive runtime. RoroForm aims at the middle: server-rendered Blade with a real JS layer, no framework lock-in.
 
 ---
 

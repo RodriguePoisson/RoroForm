@@ -1,8 +1,13 @@
 {
     "name": "roro/roroform",
-    "description": "Form helper for laravel.",
+    "description": "Laravel form components with repeatable groups that actually work — searchable selects, a chainable type-aware JS API, full old()/validation/CSRF integration, and a zero-CSS-framework theme. Zero JS dependencies.",
     "type": "library",
+    "keywords": ["laravel", "forms", "form-builder", "blade", "blade-components", "php", "tailwind", "bootstrap", "repeatable", "select", "accessibility"],
+    "homepage": "https://github.com/RodriguePoisson/RoroForm",
     "license": "Apache-2.0",
+    "authors": [
+        { "name": "Rodrigue Poisson", "homepage": "https://github.com/RodriguePoisson" }
+    ],
     "autoload": {
         "psr-4": {
             "RoroForm\\": "src/"
